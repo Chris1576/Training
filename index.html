@@ -1009,7 +1009,15 @@ function verlaufHTML(){
   var sessions=S.data.sessions.slice().sort(function(a,b){ return a.date<b.date?-1:1; });
   if(!sessions.length){
     return "<div class='card empty'><h3>Noch keine Einheit erfasst</h3>"+
-      "<p class='p mut'>Trage im Tab <b>Training</b> die erste Einheit ein. Danach erscheinen hier die Gewichtsverläufe je Übung, die Tonnage pro Einheit und der Hinweis, wenn eine Übung drei Einheiten lang stagniert.</p></div>";
+      "<p class='p mut'>Trage im Tab <b>Training</b> die erste Einheit ein. Danach erscheinen hier die Gewichtsverläufe je Übung, die Tonnage pro Einheit und der Hinweis, wenn eine Übung drei Einheiten lang stagniert.</p>"+
+      "<p class='p mut'>Hast du auf einem anderen Gerät schon trainiert, richte unten den Abgleich ein und tippe auf <b>Von GitHub laden</b>.</p></div>"+
+      "<div class='card'><h3 class='h3'>Sicherung</h3>"+
+      "<p class='p mut'>Eine gespeicherte Sicherungsdatei lässt sich hier einlesen.</p>"+
+      "<div class='row' style='gap:8px'>"+
+      "<label class='btn' for='importFile'>Sicherung laden</label>"+
+      "<input type='file' id='importFile' accept='.json,application/json' style='display:none'>"+
+      "</div></div>"+
+      ghCardHTML();
   }
   var exId=S.verlaufEx;
   var series=[];
