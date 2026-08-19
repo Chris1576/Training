@@ -1239,8 +1239,13 @@ function saveSession(){
   persist().then(function(){
     return store.del(DRAFTKEY);
   }).then(function(){
+    /* Felder leeren: Gewichte stehen als Vorschlag aus der eben gespeicherten
+       Einheit wieder da, Wiederholungen und RIR sind frei fuer das naechste Mal. */
+    buildDraft(d.unitId, d.stufe, d.date);
+    S.autosavedAt = null;
     toast("Einheit gespeichert");
     render();
+    window.scrollTo(0,0);
     if(GH.auto && ghReady()) syncUp(true);
   });
 }
