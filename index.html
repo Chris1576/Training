@@ -700,6 +700,9 @@ function saveDraftSoon(){
   }, 350);
 }
 function timeShort(d){ return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+/* Zeigt einen gespeicherten ISO-Zeitstempel (UTC) in lokaler Zeit an */
+function fmtSync(iso){ if(!iso) return ""; var d=new Date(iso);
+  return dateShort(new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10))+" "+timeShort(d); }
 
 /* Prueft, ob ein gespeicherter Entwurf noch zur aktuellen Planstruktur passt */
 function draftValid(dr){
@@ -1171,7 +1174,7 @@ function ghCardHTML(){
     "<p class='p mut' id='ghStatus' style='margin:9px 0 0'>"+
     (ghReady()
       ? "Ziel: "+esc(GH.owner)+"/"+esc(GH.repo)+"/"+esc(GH.path)+" · "+
-        (GH.lastSync ? "zuletzt abgeglichen "+dateShort(GH.lastSync.slice(0,10))+" "+GH.lastSync.slice(11,16) : "noch kein Abgleich")
+        (GH.lastSync ? "zuletzt abgeglichen "+fmtSync(GH.lastSync) : "noch kein Abgleich")
       : "Es fehlt noch: "+
         [(!GH.token?"Token":""),(!GH.owner?"Konto":""),(!GH.repo?"Repository":"")].filter(Boolean).join(", "))+"</p>"+
     "<div class='blk'><span class='blklbl'>Token erzeugen</span><p>GitHub → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b>. Unter „Repository access“ nur das eine Datenrepository auswählen, unter „Permissions“ bei <b>Contents</b> auf <b>Read and write</b> stellen. Das Token bleibt nur auf diesem Gerät und steht nicht in der App-Datei.</p></div></div>";
