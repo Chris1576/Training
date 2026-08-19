@@ -595,9 +595,11 @@ function syncDown(silent){
       S.data.sessions = mergeSessions(S.data.sessions, remote.sessions);
       if(remote.startDate && (!S.data.startDate || remote.startDate < S.data.startDate))
         S.data.startDate = remote.startDate;
+      GH.lastSync = new Date().toISOString();
+      store.set(GHKEY, GH);
       return persist().then(function(){
         var neu = S.data.sessions.length - vorher;
-        ghStatus("Aktueller Stand · " + timeShort(new Date()));
+        ghStatus("Heruntergeladen " + timeShort(new Date()));
         render();
         if(neu>0) toast(neu+" Einheiten dazugeladen");
         else if(!silent) toast("Stand ist bereits aktuell");
@@ -1415,6 +1417,8 @@ document.addEventListener("click",function(ev){
     ghFetch().then(function(remote){
       if(!remote || !Array.isArray(remote.sessions)){ toast("Auf GitHub liegt noch keine Datei"); return; }
       S.data = { startDate: remote.startDate || null, sessions: remote.sessions };
+      GH.lastSync = new Date().toISOString();
+      store.set(GHKEY, GH);
       return persist().then(function(){
         ghStatus("GitHub-Stand übernommen · " + timeShort(new Date()));
         render(); toast("GitHub-Stand übernommen");
