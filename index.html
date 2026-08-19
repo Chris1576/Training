@@ -1107,7 +1107,11 @@ function ghCardHTML(){
     "<button class='btn' id='ghUp'>Jetzt hochladen</button>"+
     "<button class='btn' id='ghDown'>Von GitHub laden</button></div>"+
     "<p class='p mut' id='ghStatus' style='margin:9px 0 0'>"+
-    (GH.lastSync ? "Zuletzt abgeglichen "+dateShort(GH.lastSync.slice(0,10))+" "+GH.lastSync.slice(11,16) : "Noch kein Abgleich")+"</p>"+
+    (ghReady()
+      ? "Ziel: "+esc(GH.owner)+"/"+esc(GH.repo)+"/"+esc(GH.path)+" · "+
+        (GH.lastSync ? "zuletzt abgeglichen "+dateShort(GH.lastSync.slice(0,10))+" "+GH.lastSync.slice(11,16) : "noch kein Abgleich")
+      : "Es fehlt noch: "+
+        [(!GH.token?"Token":""),(!GH.owner?"Konto":""),(!GH.repo?"Repository":"")].filter(Boolean).join(", "))+"</p>"+
     "<div class='blk'><span class='blklbl'>Token erzeugen</span><p>GitHub → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b>. Unter „Repository access“ nur das eine Datenrepository auswählen, unter „Permissions“ bei <b>Contents</b> auf <b>Read and write</b> stellen. Das Token bleibt nur auf diesem Gerät und steht nicht in der App-Datei.</p></div></div>";
 }
 
@@ -1299,14 +1303,26 @@ document.addEventListener("click",function(ev){
   if(el.id==="backupBtn"){ downloadBackup(); return; }
   if(el.id==="ghToggle"){ S.ghOpen=!S.ghOpen; render(); return; }
   if(el.id==="ghSave"){
-    GH.token  = document.getElementById("ghToken").value.trim();
-    GH.owner  = document.getElementById("ghOwner").value.trim();
-    GH.repo   = document.getElementById("ghRepo").value.trim();
-    GH.path   = document.getElementById("ghPath").value.trim() || "trainingslog.json";
-    GH.branch = document.getElementById("ghBranch").value.trim() || "main";
-    GH.auto   = document.getElementById("ghAuto").checked;
+    function feld(id){ var e=document.getElementById(id); return e ? String(e.value||"").trim() : ""; }
+    GH.token  = feld("ghToken");
+    GH.owner  = feld("ghOwner").replace(/^https?:\/\/github\.com\//,"").split("/")[0];
+    GH.repo   = feld("ghRepo").split("/").pop();
+    GH.path   = feld("ghPath") || "trainingslog.json";
+    GH.branch = feld("ghBranch") || "main";
+    var chk = document.getElementById("ghAuto");
+    GH.auto   = chk ? chk.checked : true;
     GH_SHA = null;
-    store.set(GHKEY, GH).then(function(){ render(); toast(ghReady()?"Zugang gespeichert":"Angaben unvollständig"); });
+
+    var fehlt = [];
+    if(!GH.token) fehlt.push("Token");
+    if(!GH.owner) fehlt.push("Konto");
+    if(!GH.repo)  fehlt.push("Repository");
+
+    store.set(GHKEY, GH).then(function(){
+      render();
+      if(fehlt.length) toast("Es fehlt noch: " + fehlt.join(", "));
+      else toast("Zugang gespeichert");
+    });
     return;
   }
   if(el.id==="ghUp"){
