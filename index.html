@@ -409,9 +409,21 @@ var store = {
   },
   set: function(key, obj){
     var s = JSON.stringify(obj);
-    if (window.storage && window.storage.set) return window.storage.set(key, s);
-    try { localStorage.setItem(key, s); return Promise.resolve(true); }
-    catch(e){ return Promise.reject(e); }
+    function lokal(){
+      try { localStorage.setItem(key, s); return Promise.resolve(true); }
+      catch(e){
+        var msg = (e && e.name==="QuotaExceededError")
+          ? "Speicher voll — alte Einheiten exportieren und löschen"
+          : "Browser erlaubt kein Speichern (privater Modus?)";
+        return Promise.reject(new Error(msg));
+      }
+    }
+    if (window.storage && window.storage.set) {
+      return window.storage.set(key, s)
+        .then(function(r){ if(r===null) throw new Error("leer"); return r; })
+        .catch(function(){ return lokal(); });   /* App-Speicher gestört -> lokal weiter */
+    }
+    return lokal();
   },
   del: function(key){
     if (window.storage && window.storage.delete) return window.storage.delete(key).catch(function(){});
@@ -654,9 +666,9 @@ function saveDraftSoon(){
       S.autosavedAt = new Date();
       var el=document.getElementById("autosave");
       if(el) el.textContent = "Zwischengespeichert " + timeShort(S.autosavedAt) + " · " + STORAGE_MODE;
-    }).catch(function(){
+    }).catch(function(e){
       var el=document.getElementById("autosave");
-      if(el) el.textContent = "Zwischenspeichern fehlgeschlagen";
+      if(el) el.textContent = "Nicht gesichert: " + (e && e.message ? e.message : "unbekannter Fehler");
     });
   }, 350);
 }
@@ -674,13 +686,16 @@ function draftValid(dr){
   return true;
 }
 
-function buildDraft(unitId,stufe,date){
+/* leer=true -> auch die Gewichtsfelder bleiben frei (nach dem Speichern) */
+function buildDraft(unitId,stufe,date,leer){
   var prevAll=lastByEx(), u=unitById(unitId), entries={};
   u.ex.forEach(function(ex){
     var n = stufe==="B" ? Math.max(1,ex.sets-1) : ex.sets;
     var prev=prevAll[ex.id], arr=[];
     for(var i=0;i<n;i++){
-      arr.push({ kg: prev ? (prev.sets[i]?prev.sets[i].kg:prev.sets[0].kg) : "", reps:"", rir:"" });
+      var kg = "";
+      if(!leer && prev) kg = prev.sets[i] ? prev.sets[i].kg : prev.sets[0].kg;
+      arr.push({ kg:kg, reps:"", rir:"" });
     }
     entries[ex.id]=arr;
   });
@@ -1216,8 +1231,9 @@ function referenzHTML(){
    INTERAKTION
    ============================================================ */
 function persist(){
-  return store.set(KEY, S.data).catch(function(){
-    toast("Speichern fehlgeschlagen");
+  return store.set(KEY, S.data).catch(function(e){
+    toast("Nicht gespeichert: " + (e && e.message ? e.message : "unbekannter Fehler"));
+    throw e;
   });
 }
 
@@ -1236,18 +1252,22 @@ function saveSession(){
   S.saved=true;
   S.autosavedAt=null;
   clearTimeout(_draftTimer);
-  persist().then(function(){
+  persist().catch(function(){
+    /* Konnte nicht abgelegt werden -> Eingaben bleiben stehen */
+    S.saved=false; render();
+    throw new Error("stop");
+  }).then(function(){
     return store.del(DRAFTKEY);
   }).then(function(){
     /* Felder leeren: Gewichte stehen als Vorschlag aus der eben gespeicherten
        Einheit wieder da, Wiederholungen und RIR sind frei fuer das naechste Mal. */
-    buildDraft(d.unitId, d.stufe, d.date);
+    buildDraft(d.unitId, d.stufe, d.date, true);
     S.autosavedAt = null;
     toast("Einheit gespeichert");
     render();
     window.scrollTo(0,0);
     if(GH.auto && ghReady()) syncUp(true);
-  });
+  }).catch(function(){ /* Meldung ist bereits erschienen */ });
 }
 
 function downloadCsv(){
