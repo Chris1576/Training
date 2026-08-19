@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E1110">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ganzkörper">
+<title>Trainingslog — 3× Ganzkörper</title>
+<style>
+:root{
+  color-scheme:dark;
+  --ink:#E8ECE9; --mut:#8B948E; --line:#2B322E; --line2:#222825;
+  --bg:#0E1110; --panel:#171B19; --sunk:#121615;
+  --a1:#4FC8B4; --a1s:#122B28;
+  --a2:#E08356; --a2s:#2C1D16;
+  --a3:#8FA0EE; --a3s:#1A1F33;
+  --warn:#D9A63C; --warns:#2A2313;
+  --danger:#E07070; --dangers:#2A1717;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg)}
+body{
+  color:var(--ink); min-height:100vh;
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:15px; line-height:1.45; padding-bottom:40px;
+}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--a1);outline-offset:2px}
+.mono{font-variant-numeric:tabular-nums}
+.mut{color:var(--mut)}
+.r{text-align:right} .c{text-align:center}
+h1,h2,h3{margin:0}
+
+/* Kopf */
+.head{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line);
+  padding-top:env(safe-area-inset-top)}
+.head-top{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px 10px;gap:12px}
+.kicker{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
+.title{font-size:24px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
+.weekbox{text-align:right;line-height:1.1}
+.weeklbl{display:block;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
+.weeknum{display:block;font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--a1)}
+.weeksub{display:block;font-size:11px;color:var(--mut);margin-top:2px}
+.tabs{display:flex;padding:0 8px;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{background:none;border:0;padding:9px 12px 10px;font-size:13px;color:var(--mut);
+  border-bottom:2px solid transparent;white-space:nowrap;border-radius:10px 10px 0 0}
+.tab.on{color:var(--ink);font-weight:700;border-bottom-color:var(--ink)}
+
+main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);padding:12px 14px;border-radius:14px}
+.h3{font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;font-weight:700}
+.p{margin:0 0 8px;font-size:13.5px}
+.ol,.ul{margin:0 0 8px;padding-left:18px;font-size:13.5px}
+.ol li,.ul li{margin-bottom:3px}
+.no{list-style:none;padding-left:0}
+.no li{padding-left:14px;position:relative}
+.no li::before{content:"×";position:absolute;left:0;color:var(--a2);font-weight:700}
+
+/* Sitzungsleiste */
+.unitpick{display:flex;gap:6px;margin-bottom:12px}
+.unitbtn{flex:1;background:var(--sunk);border:1px solid var(--line);padding:8px 4px;text-align:center;
+  border-top:3px solid var(--line);line-height:1.2;color:var(--ink);border-radius:10px}
+.unitbtn .un{display:block;font-size:15px;font-weight:700}
+.unitbtn .up{display:block;font-size:11px;color:var(--mut)}
+.unitbtn .ud{display:block;font-size:10px;color:var(--mut);margin-top:2px}
+.unitbtn.a1.on{border-top-color:var(--a1);background:var(--a1s)} .unitbtn.a1.on .un{color:var(--a1)}
+.unitbtn.a2.on{border-top-color:var(--a2);background:var(--a2s)} .unitbtn.a2.on .un{color:var(--a2)}
+.unitbtn.a3.on{border-top-color:var(--a3);background:var(--a3s)} .unitbtn.a3.on .un{color:var(--a3)}
+
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.field{display:block;flex:1;min-width:150px}
+.field>span{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-bottom:3px}
+.field input,.field select{width:100%;padding:8px;border:1px solid var(--line);background:var(--sunk);
+  font:inherit;font-size:14px;color:var(--ink);border-radius:10px}
+.stufepick{display:flex;gap:4px}
+.stufebtn{flex:1;padding:8px 0;border:1px solid var(--line);background:var(--sunk);font-weight:700;
+  font-size:14px;color:var(--mut);border-radius:10px}
+.stufebtn.sA.on{background:var(--a1s);border-color:var(--a1);color:var(--a1)}
+.stufebtn.sB.on{background:var(--warns);border-color:var(--warn);color:var(--warn)}
+.stufebtn.sC.on{background:var(--dangers);border-color:var(--danger);color:var(--danger)}
+.stufetext{margin-top:8px;font-size:12px;color:var(--mut)}
+
+.note{background:var(--a1s);border-left:3px solid var(--a1);padding:9px 12px;font-size:13px;border-radius:12px}
+.note.b{background:var(--warns);border-left-color:var(--warn)}
+
+/* Übungskarte */
+.exlist{display:flex;flex-direction:column;gap:12px}
+.ex{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line);
+  border-radius:14px;overflow:hidden}
+.ex.a1{border-left-color:var(--a1)} .ex.a2{border-left-color:var(--a2)} .ex.a3{border-left-color:var(--a3)}
+.ex-head{display:flex;align-items:baseline;gap:8px;padding:11px 14px 0}
+.ex-idx{font-size:11px;font-weight:700;color:var(--mut);font-variant-numeric:tabular-nums}
+.ex-name{flex:1;font-size:15px;font-weight:700;line-height:1.25}
+.ex-name i{font-style:normal;font-weight:400;color:var(--mut);font-size:12.5px}
+.prio{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);
+  border:1px solid var(--line);padding:2px 8px;border-radius:999px}
+.ex-target{display:flex;gap:14px;padding:4px 14px 8px;font-size:12px;color:var(--mut);flex-wrap:wrap}
+.ex-target b{color:var(--ink)}
+.warm{margin:0 14px 8px;padding:7px 9px;background:var(--sunk);font-size:12px;color:var(--mut);border-radius:12px}
+.warm b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+.set{display:flex;align-items:flex-end;gap:8px;padding:9px 14px;border-top:1px solid var(--line2);flex-wrap:wrap}
+.set.hit{background:var(--a1s)}
+.set.under{background:#1F1B13}
+.set-n{width:14px;font-size:11px;color:var(--mut);font-weight:700;padding-bottom:9px}
+.lbl{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}
+.numf{width:112px}
+.numrow{display:flex;border:1px solid var(--line);background:var(--sunk);border-radius:10px;overflow:hidden}
+.numrow input{width:100%;min-width:0;border:0;text-align:center;font:inherit;font-size:16px;padding:7px 0;
+  font-variant-numeric:tabular-nums;background:transparent;color:var(--ink);-moz-appearance:textfield}
+.numrow input::-webkit-outer-spin-button,.numrow input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.step{width:32px;border:0;background:#232927;color:var(--ink);font-size:17px;line-height:1}
+.rir{flex:1;min-width:120px}
+.rirpick{display:flex;gap:3px}
+.rirbtn{flex:1;padding:7px 0;border:1px solid var(--line);background:var(--sunk);font-size:13px;
+  color:var(--mut);font-variant-numeric:tabular-nums;border-radius:10px}
+.rirbtn.on{background:var(--a1);border-color:var(--a1);color:#0E1110;font-weight:700}
+
+.prev{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-top:7px;padding-top:6px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--mut)}
+.prev.none{justify-content:flex-start;font-style:italic;opacity:.75}
+.prevval b{color:var(--ink);font-weight:700}
+.prevlbl{display:inline-block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-right:6px}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:10.5px;font-variant-numeric:tabular-nums}
+.chip.up{color:var(--a1);border-color:var(--a1)}
+.chip.down{color:var(--warn);border-color:var(--warn)}
+.chip.same{color:var(--mut)}
+
+.ex-foot{display:flex;justify-content:space-between;gap:10px;padding:9px 14px 11px;
+  border-top:1px solid var(--line2);font-size:11.5px;color:var(--mut);flex-wrap:wrap}
+.ready{color:var(--a1);font-weight:700;border:1px solid var(--a1);padding:1px 8px;border-radius:999px}
+
+.savebar{position:sticky;bottom:0;display:flex;align-items:center;gap:12px;background:var(--panel);
+  border:1px solid var(--line);padding:10px 14px;border-radius:14px;margin-bottom:env(safe-area-inset-bottom)}
+.savemeta{display:flex;align-items:center;gap:8px;flex:1}
+.big{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.savesub{font-size:11px;color:var(--mut);line-height:1.3}
+.btn{border:1px solid var(--line);background:var(--sunk);padding:10px 14px;font-size:14px;color:var(--ink);border-radius:10px}
+.btn.main{background:var(--a1);border-color:var(--a1);color:#0E1110;font-weight:700}
+.btn.main:disabled{background:var(--line2);border-color:var(--line);color:var(--mut)}
+.btn.danger{border-color:var(--danger);color:var(--danger)}
+
+/* Ablauf */
+.intro{font-size:13.5px;color:var(--mut);margin:10px 0}
+.abmeta{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--mut);
+  border-top:1px solid var(--line2);padding-top:9px}
+.abmeta b{color:var(--ink);font-variant-numeric:tabular-nums;font-size:14px}
+.timenote{margin:9px 0 0;font-size:12px;color:var(--mut)}
+.timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.tl{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line);
+  border-radius:14px;overflow:hidden}
+.tl.a1{border-left-color:var(--a1)} .tl.a2{border-left-color:var(--a2)} .tl.a3{border-left-color:var(--a3)}
+.tl-head{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;
+  padding:12px;text-align:left;color:var(--ink)}
+.tl-time{width:46px;flex:none;font-size:12px;font-weight:700;color:var(--mut);
+  font-variant-numeric:tabular-nums;line-height:1.15}
+.tl-time i{display:block;font-style:normal;font-size:9.5px;font-weight:400;opacity:.7}
+.tl-title{flex:1;font-size:14.5px;font-weight:700;line-height:1.25}
+.tl-title i{font-style:normal;font-weight:400;color:var(--mut);font-size:12px}
+.tl-idx{display:inline-block;min-width:15px;font-size:11px;color:var(--mut);font-weight:700}
+.tl-spec{font-size:12px;color:var(--mut);flex:none}
+.chev{font-size:18px;color:var(--mut);width:14px;text-align:center}
+.tl-body{padding:0 12px 12px;border-top:1px solid var(--line2)}
+.tl-body .ol,.tl-body .ul{margin-top:10px}
+.tl-foot{margin-top:8px;padding-top:8px;border-top:1px solid var(--line2);font-size:12.5px;color:var(--mut)}
+.execspec{display:flex;gap:14px;flex-wrap:wrap;padding:10px 0 4px}
+.execspec b{font-size:14px}
+.blk{margin-top:9px;padding:9px 11px;background:var(--sunk);border-left:2px solid var(--line);border-radius:12px}
+.blk p{margin:0;font-size:13px}
+.blk .ul{margin:0;padding-left:16px;font-size:12.5px}
+.blk.warn{border-left-color:var(--warn);background:var(--warns)}
+.blk.danger{border-left-color:var(--danger);background:var(--dangers)}
+.blklbl{display:block;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-bottom:3px}
+.blk.warn .blklbl{color:var(--warn)}
+.blk.danger .blklbl{color:var(--danger)}
+
+/* Verlauf */
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.stat{flex:1;min-width:78px;background:var(--panel);border:1px solid var(--line);padding:11px 12px;border-radius:14px}
+.statnum{display:block;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.statlbl{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.chartwrap{margin:12px 0 4px;background:var(--sunk);border-radius:12px;padding:10px 8px}
+.csv{width:100%;height:150px;margin-top:10px;font-family:ui-monospace,monospace;font-size:11px;
+  border:1px solid var(--line);padding:8px;background:var(--sunk);color:var(--ink);border-radius:12px}
+
+/* Tabellen */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);
+  font-weight:700;padding:0 6px 4px 0;border-bottom:1px solid var(--line)}
+td{padding:7px 6px 7px 0;border-bottom:1px solid var(--line2);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th.c,td.c{text-align:center;padding-right:0}
+td.r,th.r{text-align:right;padding-right:0}
+tfoot td{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;
+  border-top:1px solid var(--line);padding-top:7px}
+td.k{width:74px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:700}
+
+/* Plan */
+.week{display:flex;gap:3px;margin-top:10px}
+.wday{flex:1;text-align:center;border:1px solid var(--line);border-top:3px solid var(--line);
+  padding:7px 2px;background:var(--sunk);border-radius:10px}
+.wd{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.wt{display:block;font-size:13px;font-weight:700;margin-top:1px}
+.wday.a1{border-top-color:var(--a1);background:var(--a1s)} .wday.a1 .wt{color:var(--a1)}
+.wday.a2{border-top-color:var(--a2);background:var(--a2s)} .wday.a2 .wt{color:var(--a2)}
+.wday.a3{border-top-color:var(--a3);background:var(--a3s)} .wday.a3 .wt{color:var(--a3)}
+.planunit{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.planunit.a1{border-left:3px solid var(--a1)}
+.planunit.a2{border-left:3px solid var(--a2)}
+.planunit.a3{border-left:3px solid var(--a3)}
+.planhead{display:flex;align-items:baseline;gap:10px;width:100%;background:none;border:0;
+  padding:13px 14px;text-align:left;color:var(--ink)}
+.planname{font-size:16px;font-weight:700;flex:1}
+.planname i{font-style:normal;font-weight:400;color:var(--mut);font-size:13px}
+.planprio{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+.plantable{padding:0 14px 12px}
+.plantable tr.p td{background:var(--sunk)}
+.tidx{width:16px;font-size:11px;color:var(--mut);font-weight:700}
+
+/* Referenz */
+.warmgeneral{margin-top:10px;padding:10px 12px;background:var(--sunk);font-size:13px;border-radius:12px}
+.warmgeneral ol{margin:5px 0 0;padding-left:18px}
+.forbid{margin-top:10px;padding:10px 12px;background:var(--a2s);border-left:3px solid var(--a2);
+  font-size:13px;border-radius:12px}
+.forbid ul{margin:4px 0 0;padding-left:18px}
+.stufe{border-left:3px solid var(--line);padding:9px 12px;margin-bottom:6px;font-size:13px;
+  background:var(--sunk);border-radius:12px}
+.stufelbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;margin-bottom:2px}
+.stufe.sA{border-left-color:var(--a1);background:var(--a1s)} .stufe.sA .stufelbl{color:var(--a1)}
+.stufe.sB{border-left-color:var(--warn);background:var(--warns)} .stufe.sB .stufelbl{color:var(--warn)}
+.stufe.sC{border-left-color:var(--danger);background:var(--dangers)} .stufe.sC .stufelbl{color:var(--danger)}
+
+.empty h3{font-size:16px;margin-bottom:6px}
+.ghhead{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;padding:0;color:var(--ink)}
+.ghstate{margin-left:auto;font-size:11px;color:var(--mut)}
+.ghauto{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--mut)}
+.ghauto input{width:18px;height:18px;accent-color:var(--a1)}
+.card.alarm{border-color:var(--danger);background:var(--dangers)}
+.card.alarm .h3{color:var(--danger)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;background:var(--a1);color:#0E1110;
+  padding:9px 16px;border-radius:999px;font-size:13px;font-weight:700;z-index:50;opacity:0;
+  transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+@media (max-width:420px){
+  .numf{width:98px}
+  .set{gap:6px;padding:9px 10px}
+  .ex-head,.ex-target,.ex-foot{padding-left:10px;padding-right:10px}
+  .warm{margin-left:10px;margin-right:10px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+<script>
+/* ============================================================
+   DATEN
+   ============================================================ */
+var META = {
+  klimmzug_o:{incr:2.5,step:1.25,bw:true,label:"Klimmzug Obergriff"},
+  klimmzug_u:{incr:2.5,step:1.25,bw:true,label:"Klimmzug Untergriff"},
+  dips:{incr:2.5,step:1.25,bw:true,label:"Dips vorgelehnt"},
+  lh_rudern:{incr:2.5,step:2.5,label:"LH-Rudern vorgebeugt"},
+  lh_bank:{incr:2.5,step:2.5,label:"LH-Bankdrücken flach"},
+  lh_ohp:{incr:2,step:2.5,label:"LH-Überkopfdrücken"},
+  lh_squat:{incr:5,step:2.5,label:"LH-Kniebeuge"},
+  lh_rdl:{incr:5,step:2.5,label:"Rumänisches Kreuzheben"},
+  lh_curl:{incr:2.5,step:2.5,label:"LH-Curl"},
+  kh_bank:{incr:2,step:1,label:"KH-Bankdrücken flach"},
+  kh_schraeg:{incr:2,step:1,label:"KH-Schrägbankdrücken 30°"},
+  kh_rudern:{incr:2,step:1,label:"KH-Rudern einarmig"},
+  kh_seit:{incr:1,step:1,label:"KH-Seitheben"},
+  kh_tri:{incr:1,step:1,label:"KH-Trizepsstrecken"},
+  bss:{incr:2,step:1,label:"Bulgarian Split Squat"},
+  lunges:{incr:2,step:1,label:"Ausfallschritte rückwärts"},
+  waden:{incr:2.5,step:2.5,label:"Stehendes Wadenheben"}
+};
+
+var UNITS = [
+ {id:"GK1",n:1,day:"Dienstag",prio:"Zug",accent:"a1",ex:[
+  {id:"klimmzug_o",name:"Klimmzug Obergriff",hint:"ggf. Zusatzgewicht",sets:3,min:5,max:8,rir:"1",pause:"3 Min",prio:true,warm:true},
+  {id:"lh_rudern",name:"LH-Rudern vorgebeugt",hint:"30–45°",sets:3,min:6,max:8,rir:"2",pause:"3 Min",prio:true,warm:true},
+  {id:"kh_bank",name:"KH-Bankdrücken flach",sets:2,min:6,max:8,rir:"1",pause:"2–3 Min",warm:true},
+  {id:"lh_squat",name:"LH-Kniebeuge",sets:2,min:6,max:8,rir:"2",pause:"3–4 Min",warm:true},
+  {id:"lh_rdl",name:"Rumänisches Kreuzheben LH",sets:2,min:8,max:10,rir:"2",pause:"3 Min"},
+  {id:"kh_seit",name:"KH-Seitheben",sets:2,min:10,max:15,rir:"0–1",pause:"2 Min"},
+  {id:"lh_curl",name:"LH-Curl",sets:2,min:8,max:12,rir:"0–1",pause:"2 Min"}]},
+ {id:"GK2",n:2,day:"Donnerstag",prio:"Druck",accent:"a2",ex:[
+  {id:"lh_bank",name:"LH-Bankdrücken flach",sets:3,min:5,max:8,rir:"1–2",pause:"3 Min",prio:true,warm:true},
+  {id:"dips",name:"Dips",hint:"vorgelehnt, Brustversion",sets:3,min:6,max:10,rir:"0–1",pause:"2–3 Min",prio:true},
+  {id:"lh_ohp",name:"LH-Überkopfdrücken stehend",sets:2,min:6,max:8,rir:"2",pause:"3 Min",warm:true},
+  {id:"klimmzug_u",name:"Klimmzug Untergriff",sets:2,min:6,max:8,rir:"1",pause:"3 Min"},
+  {id:"kh_rudern",name:"KH-Rudern einarmig",hint:"je Seite",sets:2,min:8,max:10,rir:"1",pause:"2 Min"},
+  {id:"bss",name:"Bulgarian Split Squat KH",hint:"je Seite",sets:2,min:8,max:10,rir:"1–2",pause:"2–3 Min"},
+  {id:"kh_tri",name:"KH-Trizepsstrecken über Kopf",sets:2,min:8,max:12,rir:"0–1",pause:"2 Min"}]},
+ {id:"GK3",n:3,day:"Samstag",prio:"Beine",accent:"a3",ex:[
+  {id:"lh_squat",name:"LH-Kniebeuge",sets:3,min:5,max:8,rir:"2",pause:"3–4 Min",prio:true,warm:true},
+  {id:"lh_rdl",name:"Rumänisches Kreuzheben LH",sets:3,min:6,max:8,rir:"2",pause:"3 Min",prio:true,warm:true},
+  {id:"lunges",name:"Ausfallschritte KH rückwärts",hint:"je Seite",sets:2,min:8,max:10,rir:"1",pause:"2–3 Min"},
+  {id:"waden",name:"Stehendes Wadenheben",sets:3,min:8,max:12,rir:"0–1",pause:"2 Min"},
+  {id:"klimmzug_o",name:"Klimmzug Obergriff",sets:2,min:6,max:8,rir:"1",pause:"3 Min"},
+  {id:"kh_schraeg",name:"KH-Schrägbankdrücken",hint:"30°",sets:2,min:6,max:8,rir:"1",pause:"2–3 Min"},
+  {id:"kh_seit",name:"KH-Seitheben",sets:2,min:10,max:15,rir:"0–1",pause:"2 Min"}]}
+];
+
+var EXEC = {
+ lh_squat:{aufbau:"Stange auf dem oberen Trapez, Hände so eng wie die Schulter es zulässt. Füße schulterbreit, Zehen 15–30° nach außen. Vor dem Ausheben tief einatmen und den Bauch nach außen spannen.",
+  bewegung:"Hüfte und Knie gleichzeitig beugen, Knie folgen der Fußrichtung. Runter in 2–3 s bis mindestens Oberschenkel waagerecht, hoch explosiv. Die Luft bleibt bis zum Durchqueren der schwersten Stelle im Bauch.",
+  fehler:"Hüfte schießt schneller hoch als die Brust — dann ist das Gewicht zu hoch. Zurück auf die Untergrenze der Spanne.",
+  abbruch:"Nur im Rack mit Ablagebügeln auf Höhe der tiefsten Position. Stange kontrolliert absetzen, nie nach hinten abwerfen. Ohne Ablagen wird die Kniebeuge durch Split Squats ersetzt."},
+ lh_rdl:{aufbau:"Stange am Körper, Griff schulterbreit, Knie leicht gebeugt und ab jetzt fixiert. Schulterblätter nach hinten unten, Brust hoch.",
+  bewegung:"Hüfte nach hinten schieben, Stange schleift an Oberschenkel und Schienbein entlang. Runter, bis die Hamstrings maximal ziehen — meist Mitte Schienbein, nicht bis zum Boden. Hoch durch Hüftstreckung, nicht durch Zurücklehnen.",
+  fehler:"Runder unterer Rücken in der Endposition. Sobald die Wirbelsäule nachgibt, ist der Satz vorbei — auch bei RIR 4.",
+  abbruch:"Stange lässt sich jederzeit am Boden ablegen. Deshalb ist ein Satz bis zum Versagen hier nie nötig."},
+ lh_bank:{aufbau:"Augen unter der Stange, Füße fest am Boden, Schulterblätter zusammen und nach unten gezogen. Leichtes Hohlkreuz ist erwünscht, das Gesäß bleibt auf der Bank.",
+  bewegung:"Stange in 2–3 s zum unteren Brustbein, Ellenbogen etwa 45–60° zum Rumpf. Kurz Kontakt ohne aufzuprallen, dann explosiv hoch. Schulterblätter bleiben fixiert.",
+  fehler:"Ellenbogen rechtwinklig abgespreizt — belastet die Schulterkapsel und kostet Kraft.",
+  abbruch:"Nur mit Sicherheitsablagen. Ohne Ablagen keine Verschlüsse an der Stange, damit sie sich im Notfall entladen lässt — besser: Kurzhanteln statt Langhantel."},
+ lh_ohp:{aufbau:"Stange auf den vorderen Schultern, Griff knapp außerhalb der Schulterbreite, Ellenbogen leicht vor der Stange. Gesäß und Bauch fest, Rippen unten.",
+  bewegung:"Kopf minimal zurück, Stange senkrecht am Gesicht vorbei nach oben, oben den Kopf wieder durchschieben. Absenken kontrolliert bis auf die Schultern.",
+  fehler:"Ausweichen ins Hohlkreuz, sobald es schwer wird. Das ist das Abbruchsignal, keine gültige Wiederholung.",
+  abbruch:"Vor der Stange wegtreten und sie kontrolliert vor dem Körper absetzen."},
+ lh_rudern:{aufbau:"Hüfte gebeugt, Oberkörper 30–45° zur Waagerechten, Rücken gerade, Knie leicht gebeugt. Griff etwa schulterbreit im Obergriff.",
+  bewegung:"Stange zum Bauchnabel ziehen, Ellenbogen eng am Körper, Schulterblätter am Ende zusammen. Ablassen in 2–3 s bis zur vollen Streckung des Lats.",
+  fehler:"Der Oberkörper richtet sich mit jeder Wiederholung weiter auf. Der Winkel wird vom ersten bis zum letzten Satz gehalten — sonst sind die Gewichte über acht Wochen nicht vergleichbar."},
+ klimmzug_o:{aufbau:"Obergriff etwas weiter als schulterbreit. Aus dem vollen Hang starten, Schulterblätter zuerst nach unten ziehen, dann erst die Arme beugen.",
+  bewegung:"Brust zur Stange, Blick geradeaus, Beine ruhig. Ablassen in 2–3 s bis fast in die volle Streckung.",
+  fehler:"Schwung aus der Hüfte. Unter 6 sauberen Wiederholungen wird mit Fußkontakt unterstützt oder es werden Negative trainiert.",
+  abbruch:"Loslassen und landen."},
+ klimmzug_u:{aufbau:"Untergriff schulterbreit, voller Hang, Schulterblätter zuerst nach unten ziehen.",
+  bewegung:"Brust zur Stange, Ellenbogen nah am Rumpf. Ablassen in 2–3 s bis fast in die volle Streckung.",
+  fehler:"Schwung aus der Hüfte oder verkürzter Bewegungsumfang am oberen Ende.",
+  abbruch:"Loslassen und landen."},
+ dips:{aufbau:"Barrenbreite knapp über Schulterbreite. Oberkörper bewusst nach vorn geneigt, Beine leicht nach hinten, Schultern aktiv nach unten gedrückt.",
+  bewegung:"Absenken in 2–3 s, bis die Oberarme etwa waagerecht sind — nicht tiefer, wenn es in der Schultervorderseite zieht. Hoch, ohne die Vorneigung aufzugeben.",
+  fehler:"Aufrechter Oberkörper macht daraus eine Trizepsübung und nimmt der Brust den Reiz.",
+  abbruch:"Füße aufsetzen. Genau deshalb ist hier RIR 0–1 erlaubt."},
+ kh_bank:{aufbau:"Schulterblätter zusammengezogen, Füße fest am Boden, Hanteln über der unteren Brust.",
+  bewegung:"Absenken in 2–3 s, bis die Oberarme etwa auf Bankhöhe sind. Handrücken zeigen nach hinten.",
+  fehler:"Hanteln oben zusammenklappen — der Zug auf die Brust verschwindet.",
+  abbruch:"Hanteln seitlich neben dem Körper ablegen."},
+ kh_schraeg:{aufbau:"Bank auf 30°, konstant über alle acht Wochen. Schulterblätter fixiert.",
+  bewegung:"Wie beim flachen Drücken, Bahn etwas höher zur Schlüsselbeinlinie.",
+  fehler:"Wechselnder Bankwinkel je nach freier Bank — macht die Gewichte unvergleichbar."},
+ kh_rudern:{aufbau:"Knie und gleichseitige Hand auf der Bank, Rücken waagerecht, Hantel hängt frei.",
+  bewegung:"Hantel zur Hüfte ziehen, nicht zur Schulter. Unten voll ausstrecken lassen.",
+  fehler:"Rotation des Oberkörpers als Schwungholen."},
+ bss:{aufbau:"Hinteres Bein auf der Bank, vorderer Fuß weit genug vorn, dass das Knie über dem Mittelfuß bleibt. Kurzhanteln seitlich.",
+  bewegung:"Kontrolliert absenken, leichte Vorneigung belastet das Gesäß stärker. Alle Wiederholungen einer Seite am Stück.",
+  fehler:"Zu kurzer Stand — das vordere Knie schiebt weit über die Zehen.",
+  abbruch:"Kurzhanteln seitlich fallen lassen, Stand mit dem hinteren Bein auffangen."},
+ lunges:{aufbau:"Aufrechter Stand, Kurzhanteln seitlich, Blick geradeaus.",
+  bewegung:"Schritt nach hinten, hinteres Knie sanft absenken, Gewicht bleibt auf dem vorderen Fuß. Alle Wiederholungen einer Seite am Stück.",
+  fehler:"Aufsetzen des hinteren Knies mit Schwung."},
+ waden:{aufbau:"Vorfuß auf einer Erhöhung, Körper aufrecht, Gewicht auf Schulter oder in den Händen.",
+  bewegung:"Volle Dehnung unten mit kurzer Pause, oben eine Sekunde halten. Tempo bewusst langsam.",
+  fehler:"Wippen aus dem Sprunggelenk ohne Bewegungsumfang."},
+ kh_seit:{aufbau:"Leichte Vorneigung, Ellenbogen minimal gebeugt und führend.",
+  bewegung:"Hanteln bis Schulterhöhe führen, Ablassen in 2–3 s.",
+  fehler:"Schwung aus dem Rumpf, sobald das Gewicht zu schwer wird."},
+ lh_curl:{aufbau:"Aufrechter Stand, Ellenbogen am Rumpf, Griff schulterbreit.",
+  bewegung:"Bewegung nur im Ellenbogengelenk, unten vollständig strecken.",
+  fehler:"Ausholen mit dem Oberkörper — zählt nicht als Wiederholung."},
+ kh_tri:{aufbau:"Oberarme senkrecht und fixiert, Hantel beidhändig über dem Kopf.",
+  bewegung:"Hantel hinter den Kopf absenken bis zur Dehnung, oben nicht ganz durchdrücken.",
+  fehler:"Ellenbogen wandern nach außen und vorn."}
+};
+
+var UNIT_INTRO = {
+ GK1:"Der Zugtag. Klimmzug und Rudern bekommen je drei Sätze und die volle Frische — alles danach ist Ergänzung. Wenn du am Ende merkst, dass du bei den ersten beiden Übungen Kraft gespart hast, war die Reihenfolge nur auf dem Papier eingehalten.",
+ GK2:"Der Drucktag. Bankdrücken und Dips zuerst. Prüfe vor dem ersten schweren Satz die Sicherheitsablagen — das ist die Übung des Tages mit dem höchsten Risiko ohne Spotter.",
+ GK3:"Der Beintag. Kniebeuge und Kreuzheben liegen vorn und brauchen die längsten Pausen. Das Wadenheben steht bewusst auf Position 4 und nicht am Ende: es hat mit drei Sätzen ohnehin das kleinste Volumen und darf nicht als Erstes dem Zeitdruck zum Opfer fallen."
+};
+
+var WARMUP_GENERAL = ["2 Min zügiges Gehen / Air Squats / Hampelmänner","10× Hüftbeugen ohne Gewicht",
+ "10× tiefe Kniebeugen ohne Gewicht","10× Scapula Push-ups","5–8× Scapula Pull-ups an der Stange",
+ "je 5× Arm- und Hüftkreise pro Richtung"];
+
+var PAUSE_INHALT = ["Sofort Gewicht, Wiederholungen und RIR eintragen","Erste Minute stehen oder gehen, nicht hinsetzen",
+ "Zweite Minute: Nase ein, doppelt so lang aus","Letzte 20 s: Griff, Fußstellung und Scheiben prüfen"];
+
+var STUFEN = {
+ A:{label:"Stufe A",sub:"stabiler Tag",text:"Plan vollständig durchziehen, RIR wie vorgegeben."},
+ B:{label:"Stufe B",sub:"GI-Reizung / hoher Stresstag",text:"Ein Satz weniger pro Übung, mindestens RIR 3. Keine Übung bis zum Versagen."},
+ C:{label:"Stufe C",sub:"aktive Symptomatik",text:"Kein Krafttraining. Spaziergang."}
+};
+
+/* ============================================================
+   SPEICHER — Artefakt-Speicher, sonst localStorage
+   ============================================================ */
+var KEY = "gk3:data";
+var DRAFTKEY = "gk3:draft";
+var STORAGE_MODE = "unbekannt";
+
+var store = {
+  get: function(key){
+    if (window.storage && window.storage.get) {
+      return window.storage.get(key)
+        .then(function(r){ return r && r.value ? JSON.parse(r.value) : null; })
+        .catch(function(){ return null; });
+    }
+    try { var v = localStorage.getItem(key); return Promise.resolve(v ? JSON.parse(v) : null); }
+    catch(e){ return Promise.resolve(null); }
+  },
+  set: function(key, obj){
+    var s = JSON.stringify(obj);
+    if (window.storage && window.storage.set) return window.storage.set(key, s);
+    try { localStorage.setItem(key, s); return Promise.resolve(true); }
+    catch(e){ return Promise.reject(e); }
+  },
+  del: function(key){
+    if (window.storage && window.storage.delete) return window.storage.delete(key).catch(function(){});
+    try { localStorage.removeItem(key); } catch(e){}
+    return Promise.resolve(true);
+  }
+};
+
+var STORAGE_OK = false;
+
+/* Schreibt einen Testwert und liest ihn zurueck — nur so wissen wir sicher,
+   ob auf diesem Geraet wirklich gespeichert wird. */
+function initStorage(){
+  var inApp = !!(window.storage && window.storage.get);
+  var testKey = "gk3:test", stamp = String(Date.now());
+
+  return store.set(testKey, stamp)
+    .then(function(){ return store.get(testKey); })
+    .then(function(back){
+      STORAGE_OK = (back === stamp);
+      return store.del(testKey);
+    })
+    .catch(function(){ STORAGE_OK = false; })
+    .then(function(){
+      if(!STORAGE_OK){ STORAGE_MODE = "wird nicht gespeichert"; return; }
+      if(inApp){ STORAGE_MODE = "in deinem Claude-Konto"; return; }
+      STORAGE_MODE = "in diesem Browser";
+      if(navigator.storage && navigator.storage.persist){
+        return navigator.storage.persist().then(function(ok){
+          if(ok) STORAGE_MODE = "dauerhaft in diesem Browser";
+        }).catch(function(){});
+      }
+    });
+}
+
+/* ============================================================
+   GITHUB-ABGLEICH
+   ============================================================ */
+var GHKEY = "gk3:gh";
+var GH = { token:"", owner:"", repo:"", path:"trainingslog.json", branch:"main", auto:true };
+var GH_SHA = null;
+
+function ghReady(){ return !!(GH.token && GH.owner && GH.repo && GH.path); }
+
+function b64enc(str){
+  var bytes = new TextEncoder().encode(str), bin = "";
+  for (var i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+function b64dec(b64){
+  var bin = atob(b64.replace(/\s/g,"")), bytes = new Uint8Array(bin.length);
+  for (var i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+function ghUrl(){
+  return "https://api.github.com/repos/"+GH.owner+"/"+GH.repo+"/contents/"+
+    GH.path.split("/").map(encodeURIComponent).join("/");
+}
+function ghHeaders(){
+  return { "Authorization":"Bearer "+GH.token, "Accept":"application/vnd.github+json",
+           "X-GitHub-Api-Version":"2022-11-28" };
+}
+function ghFehler(r){
+  if(r.status===401) return "Token ungültig oder abgelaufen";
+  if(r.status===403) return "Token hat keine Schreibrechte für dieses Repository";
+  if(r.status===404) return "Repository oder Pfad nicht gefunden";
+  if(r.status===409) return "Auf GitHub liegt ein neuerer Stand — erst laden, dann hochladen";
+  return "Fehler "+r.status;
+}
+
+/* Holt die Datei; gibt null zurueck, wenn es sie noch nicht gibt */
+function ghFetch(){
+  return fetch(ghUrl()+"?ref="+encodeURIComponent(GH.branch)+"&t="+Date.now(),
+    {headers:ghHeaders(), cache:"no-store"}).then(function(r){
+      if(r.status===404){ GH_SHA=null; return null; }
+      if(!r.ok) throw new Error(ghFehler(r));
+      return r.json().then(function(j){
+        GH_SHA = j.sha;
+        return JSON.parse(b64dec(j.content));
+      });
+    });
+}
+
+function ghPut(obj){
+  var body = { message:"Trainingslog "+today(), content:b64enc(JSON.stringify(obj,null,1)), branch:GH.branch };
+  if(GH_SHA) body.sha = GH_SHA;
+  return fetch(ghUrl(), {method:"PUT", headers:ghHeaders(), body:JSON.stringify(body)})
+    .then(function(r){
+      if(!r.ok) throw new Error(ghFehler(r));
+      return r.json().then(function(j){ GH_SHA = j.content && j.content.sha; return true; });
+    });
+}
+
+/* Einheiten zusammenfuehren: gleicher Tag + gleiche Einheit = derselbe Eintrag,
+   es gewinnt der zuletzt gespeicherte. */
+function mergeSessions(a,b){
+  var map={};
+  (a||[]).concat(b||[]).forEach(function(s){
+    var k = s.date+"|"+s.unit, alt = map[k];
+    if(!alt || (s.savedAt||0) >= (alt.savedAt||0)) map[k]=s;
+  });
+  return Object.keys(map).map(function(k){ return map[k]; })
+    .sort(function(x,y){ return x.date<y.date?-1:1; });
+}
+
+function ghStatus(text){
+  var el=document.getElementById("ghStatus");
+  if(el) el.textContent=text;
+}
+
+function syncUp(silent){
+  if(!ghReady()) return Promise.resolve();
+  ghStatus("Lade hoch …");
+  return ghFetch()
+    .then(function(remote){
+      if(remote && Array.isArray(remote.sessions)){
+        S.data.sessions = mergeSessions(S.data.sessions, remote.sessions);
+        if(remote.startDate && (!S.data.startDate || remote.startDate < S.data.startDate))
+          S.data.startDate = remote.startDate;
+      }
+      return ghPut(S.data);
+    })
+    .then(function(){
+      GH.lastSync = new Date().toISOString();
+      store.set(GHKEY, GH);
+      persist();
+      ghStatus("Hochgeladen " + timeShort(new Date()));
+      if(!silent) toast("Mit GitHub abgeglichen");
+    })
+    .catch(function(e){
+      ghStatus("Fehlgeschlagen: " + e.message);
+      if(!silent) toast(e.message);
+    });
+}
+
+function syncDown(){
+  if(!ghReady()) return Promise.resolve();
+  ghStatus("Lade herunter …");
+  return ghFetch()
+    .then(function(remote){
+      if(!remote || !Array.isArray(remote.sessions)) { ghStatus("Auf GitHub liegt noch keine Datei"); return; }
+      var vorher = S.data.sessions.length;
+      S.data.sessions = mergeSessions(S.data.sessions, remote.sessions);
+      if(remote.startDate && (!S.data.startDate || remote.startDate < S.data.startDate))
+        S.data.startDate = remote.startDate;
+      return persist().then(function(){
+        var neu = S.data.sessions.length - vorher;
+        render();
+        toast(neu>0 ? neu+" Einheiten dazugeladen" : "Stand ist bereits aktuell");
+      });
+    })
+    .catch(function(e){ ghStatus("Fehlgeschlagen: " + e.message); toast(e.message); });
+}
+
+/* ============================================================
+   HELFER
+   ============================================================ */
+function today(){ var d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function roundTo(v,s){ return Math.round(v/s)*s; }
+function fmt(n){ if(n===""||n===null||n===undefined||isNaN(n)) return "–";
+  return String(Math.round(n*100)/100).replace(".",","); }
+function dateShort(d){ var p=d.split("-"); return p[2]+"."+p[1]+"."; }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function weekOf(start,date){ if(!start) return 1;
+  var a=new Date(start+"T00:00:00"), b=new Date(date+"T00:00:00");
+  return Math.max(1, Math.floor(Math.floor((b-a)/86400000)/7)+1); }
+/* Di = GK1, Do = GK2, Sa = GK3 — an anderen Tagen die naechste Einheit */
+function suggestedUnit(){ var d=new Date().getDay();
+  if(d===0) return "GK1";      /* Sonntag -> Dienstag */
+  if(d<=2) return "GK1";       /* Mo, Di */
+  if(d<=4) return "GK2";       /* Mi, Do */
+  return "GK3";                /* Fr, Sa */ }
+function unitById(id){ for(var i=0;i<UNITS.length;i++) if(UNITS[i].id===id) return UNITS[i]; return UNITS[0]; }
+function tonnage(sets){ var t=0; (sets||[]).forEach(function(x){ t+=(Number(x.kg)||0)*(Number(x.reps)||0); }); return t; }
+
+function pauseMin(p){ var n=(p.match(/\d+/g)||[]).map(Number); if(!n.length) return 2;
+  return n.reduce(function(a,b){return a+b;},0)/n.length; }
+var T_SET=0.8, T_WARMSETS=2, T_WECHSEL=1.5, T_ANKOMMEN=2, T_AUFWAERMEN=5, T_COOLDOWN=10;
+function exerciseMinutes(ex){
+  var meta=META[ex.id]||{}, beid = ex.hint && ex.hint.indexOf("je Seite")>=0;
+  var arbeit = ex.sets*T_SET*(beid?2:1);
+  var pausen = Math.max(0,ex.sets-1)*pauseMin(ex.pause);
+  var warm = (ex.warm && !meta.bw) ? T_WARMSETS : 0;
+  return warm+arbeit+pausen+T_WECHSEL;
+}
+function unitMinutes(u){ var s=T_ANKOMMEN+T_AUFWAERMEN;
+  u.ex.forEach(function(e){ s+=exerciseMinutes(e); }); return s; }
+function clock(min){ var h=Math.floor(min), s=Math.round((min-h)*60);
+  return h+":"+String(s).padStart(2,"0"); }
+
+function progressionReady(sets,ex){
+  var done=(sets||[]).filter(function(s){ return s.reps!=="" && s.kg!==""; });
+  if(done.length<ex.sets) return false;
+  var allTop=done.every(function(s){ return Number(s.reps)>=ex.max; });
+  var last=done[done.length-1];
+  var r = last.rir===""?null:Number(last.rir);
+  return allTop && r!==null && r>=1;
+}
+
+function toast(msg){
+  var t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("on");
+  clearTimeout(t._h); t._h=setTimeout(function(){ t.classList.remove("on"); },1800);
+}
+
+/* ============================================================
+   ZUSTAND
+   ============================================================ */
+var S = {
+  tab:"training",
+  data:{ startDate:null, sessions:[] },
+  draft:null,            /* {unitId,date,stufe,entries} */
+  openStep:"start",
+  ablaufUnit:suggestedUnit(),
+  openPlan:"GK1",
+  verlaufEx:"lh_squat",
+  showCsv:false,
+  saved:false,
+  autosavedAt:null,
+  ghOpen:false
+};
+
+function lastByEx(){
+  var m={};
+  S.data.sessions.slice().sort(function(a,b){ return a.date<b.date?-1:1; }).forEach(function(s){
+    Object.keys(s.sets||{}).forEach(function(ex){
+      var valid=s.sets[ex].filter(function(x){ return x.kg!=="" && x.reps!==""; });
+      if(valid.length) m[ex]={date:s.date,sets:valid};
+    });
+  });
+  return m;
+}
+
+var _draftTimer=null;
+function saveDraftSoon(){
+  clearTimeout(_draftTimer);
+  _draftTimer = setTimeout(function(){
+    store.set(DRAFTKEY, S.draft).then(function(){
+      S.autosavedAt = new Date();
+      var el=document.getElementById("autosave");
+      if(el) el.textContent = "Zwischengespeichert " + timeShort(S.autosavedAt) + " · " + STORAGE_MODE;
+    }).catch(function(){
+      var el=document.getElementById("autosave");
+      if(el) el.textContent = "Zwischenspeichern fehlgeschlagen";
+    });
+  }, 350);
+}
+function timeShort(d){ return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+
+/* Prueft, ob ein gespeicherter Entwurf noch zur aktuellen Planstruktur passt */
+function draftValid(dr){
+  if(!dr || !dr.unitId || !dr.entries) return false;
+  var u=unitById(dr.unitId);
+  if(!u || dr.unitId!==u.id) return false;
+  for(var i=0;i<u.ex.length;i++){
+    var arr=dr.entries[u.ex[i].id];
+    if(!arr || !arr.length) return false;
+  }
+  return true;
+}
+
+function buildDraft(unitId,stufe,date){
+  var prevAll=lastByEx(), u=unitById(unitId), entries={};
+  u.ex.forEach(function(ex){
+    var n = stufe==="B" ? Math.max(1,ex.sets-1) : ex.sets;
+    var prev=prevAll[ex.id], arr=[];
+    for(var i=0;i<n;i++){
+      arr.push({ kg: prev ? (prev.sets[i]?prev.sets[i].kg:prev.sets[0].kg) : "", reps:"", rir:"" });
+    }
+    entries[ex.id]=arr;
+  });
+  S.draft={unitId:unitId,stufe:stufe,date:date,entries:entries};
+  S.saved=false;
+}
+</script>
+<script>
+/* ============================================================
+   RENDERING
+   ============================================================ */
+var TABS=[["training","Training"],["ablauf","Ablauf"],["verlauf","Verlauf"],["plan","Plan"],["referenz","Referenz"]];
+
+function render(){
+  var app=document.getElementById("app");
+  app.innerHTML = headHTML() + "<main id='main'>" + bodyHTML() + "</main>";
+}
+
+function headHTML(){
+  var w = S.data.startDate ? weekOf(S.data.startDate, today()) : "–";
+  var tabs = TABS.map(function(t){
+    return "<button class='tab"+(S.tab===t[0]?" on":"")+"' data-tab='"+t[0]+"'>"+t[1]+"</button>";
+  }).join("");
+  return "<header class='head'><div class='head-top'><div>"+
+    "<div class='kicker'>3× Ganzkörper · freie Gewichte</div>"+
+    "<h1 class='title'>Trainingslog</h1></div>"+
+    "<div class='weekbox'><span class='weeklbl'>Woche</span>"+
+    "<span class='weeknum'>"+w+"</span>"+
+    "<span class='weeksub'>"+S.data.sessions.length+" Einheiten</span></div></div>"+
+    "<nav class='tabs'>"+tabs+"</nav></header>";
+}
+
+function storageBanner(){
+  if(STORAGE_OK) return "";
+  return "<div class='card alarm'><h3 class='h3'>Auf diesem Gerät wird nichts gespeichert</h3>"+
+    "<p class='p'>Alles, was du hier einträgst, ist beim Schließen weg. Das passiert, wenn die Datei lokal geöffnet wurde oder der Browser im privaten Modus läuft.</p>"+
+    "<p class='p mut'>Öffne die App stattdessen in der Claude-App — dann liegen deine Werte in deinem Konto und stehen auf jedem Gerät zur Verfügung.</p></div>";
+}
+
+function bodyHTML(){
+  if(S.tab==="training") return storageBanner()+trainingHTML();
+  if(S.tab==="ablauf")   return ablaufHTML();
+  if(S.tab==="verlauf")  return verlaufHTML();
+  if(S.tab==="plan")     return planHTML();
+  return referenzHTML();
+}
+
+/* ---------- Training ---------- */
+function unitPick(sel,action){
+  return "<div class='unitpick'>"+UNITS.map(function(u){
+    return "<button class='unitbtn "+u.accent+(sel===u.id?" on":"")+"' data-"+action+"='"+u.id+"'>"+
+      "<span class='un'>GK "+u.n+"</span><span class='up'>"+u.prio+"</span><span class='ud'>"+u.day+"</span></button>";
+  }).join("")+"</div>";
+}
+
+function prevHTML(prev,prevDate,cur){
+  if(!prev) return "<div class='prev none'>Kein Vergleichswert — dieser Satz ist neu</div>";
+  var pKg=Number(prev.kg), pReps=Number(prev.reps);
+  var cKg = cur.kg===""?null:Number(cur.kg), cReps = cur.reps===""?null:Number(cur.reps);
+  var chips="";
+  if(cKg!==null && !isNaN(pKg)){
+    var d=Math.round((cKg-pKg)*100)/100;
+    chips += "<span class='chip "+(d>0?"up":d<0?"down":"same")+"'>"+
+      (d===0?"Gewicht gleich":(d>0?"+":"−")+fmt(Math.abs(d))+" kg")+"</span>";
+  }
+  if(cReps!==null && !isNaN(pReps)){
+    var r=cReps-pReps;
+    chips += "<span class='chip "+(r>0?"up":r<0?"down":"same")+"'>"+
+      (r===0?"Wdh gleich":(r>0?"+":"−")+Math.abs(r)+" Wdh")+"</span>";
+  }
+  return "<div class='prev'><span class='prevval'>"+
+    "<span class='prevlbl'>"+(prevDate?dateShort(prevDate):"zuletzt")+"</span>"+
+    "<b class='mono'>"+fmt(pKg)+" kg × "+esc(prev.reps)+"</b>"+
+    (prev.rir!==""&&prev.rir!==undefined?"<span class='mono'> @ RIR "+esc(prev.rir)+"</span>":"")+
+    "</span><span class='chips'>"+chips+"</span></div>";
+}
+
+function trainingHTML(){
+  var d=S.draft, u=unitById(d.unitId), last=lastByEx();
+  var week = weekOf(S.data.startDate, d.date);
+  var kal = !S.data.startDate || week===1;
+
+  var bar = "<div class='card'>"+unitPick(d.unitId,"unit")+
+    "<div class='row'><label class='field'><span>Datum</span>"+
+    "<input type='date' id='dateInput' value='"+d.date+"'></label>"+
+    "<div class='field'><span>Belastungsstufe</span><div class='stufepick'>"+
+    ["A","B","C"].map(function(s){ return "<button class='stufebtn s"+s+(d.stufe===s?" on":"")+"' data-stufe='"+s+"'>"+s+"</button>"; }).join("")+
+    "</div></div></div><div class='stufetext'>"+STUFEN[d.stufe].text+"</div></div>";
+
+  if(d.stufe==="C"){
+    return bar+"<div class='card'><h3 class='h3'>Heute kein Krafttraining</h3>"+
+      "<p class='p mut'>Stufe C bedeutet aktive Symptomatik, Blutung, Fieber oder Kreislaufprobleme. Ein Spaziergang ist die vollständige Einheit. Der Plan läuft am nächsten regulären Termin weiter — eine ausgelassene Einheit wird nicht nachgeholt.</p></div>";
+  }
+
+  var notes="";
+  if(kal) notes += "<div class='note'><b>Woche 1 — Kalibrierung.</b> Alle Übungen mit RIR 3. Einziges Ziel ist das Finden der Arbeitsgewichte, nicht die Auslastung.</div>";
+  if(d.stufe==="B") notes += "<div class='note b'><b>Stufe B aktiv.</b> Ein Satz weniger pro Übung, mindestens RIR 3, keine Übung bis zum Versagen.</div>";
+
+  var cards = u.ex.map(function(ex,idx){
+    var meta=META[ex.id]||{}, sets=d.entries[ex.id]||[], lp=last[ex.id];
+    var warmBase = Number(sets[0]&&sets[0].kg) || (lp?Number(lp.sets[0].kg):0);
+    var warm="";
+    if(ex.warm && !meta.bw){
+      warm = "<div class='warm'>Aufwärmen "+(warmBase>0
+        ? "<b>"+fmt(roundTo(warmBase*0.5,meta.step))+" kg</b> × 5 &nbsp;→&nbsp; <b>"+fmt(roundTo(warmBase*0.78,meta.step))+" kg</b> × 3"
+        : "50 % × 5 → 78 % × 3, sobald ein Arbeitsgewicht steht")+"</div>";
+    }
+    var rows = sets.map(function(s,i){
+      var hit = s.reps!=="" && Number(s.reps)>=ex.max;
+      var und = s.reps!=="" && Number(s.reps)<ex.min;
+      return "<div class='set"+(hit?" hit":"")+(und?" under":"")+"' data-row='"+ex.id+"|"+i+"'>"+
+        "<span class='set-n'>"+(i+1)+"</span>"+
+        numField("kg",s.kg,meta.step||2.5,ex.id,i,"kg")+
+        numField("Wdh",s.reps,1,ex.id,i,"reps")+
+        "<div class='rir'><span class='lbl'>RIR</span><div class='rirpick'>"+
+        [0,1,2,3].map(function(r){ return "<button class='rirbtn"+(String(s.rir)===String(r)?" on":"")+
+          "' data-rir='"+ex.id+"|"+i+"|"+r+"'>"+r+"</button>"; }).join("")+
+        "</div></div>"+
+        prevHTML(lp&&lp.sets[i], lp&&lp.date, s)+
+        "</div>";
+    }).join("");
+    var ready = !kal && progressionReady(sets,ex);
+    return "<section class='ex "+u.accent+"' data-card='"+ex.id+"'>"+
+      "<div class='ex-head'><span class='ex-idx'>"+(idx+1)+"</span>"+
+      "<div class='ex-name'>"+esc(ex.name)+(ex.hint?" <i>"+esc(ex.hint)+"</i>":"")+"</div>"+
+      (ex.prio?"<span class='prio'>Priorität</span>":"")+"</div>"+
+      "<div class='ex-target'><span><b>"+ex.sets+"</b> × "+ex.min+"–"+ex.max+" Wdh</span>"+
+      "<span>RIR <b>"+(kal?"3":ex.rir)+"</b></span><span>Pause "+ex.pause+"</span></div>"+
+      warm+"<div class='sets'>"+rows+"</div>"+
+      "<div class='ex-foot'><span class='last'>"+
+      (lp ? "Zuletzt "+dateShort(lp.date)+" — "+lp.sets.map(function(x){ return fmt(Number(x.kg))+"×"+x.reps; }).join(" · ")
+          : "Noch kein Eintrag — Startgewicht in Woche 1 finden")+
+      "</span><span class='readyslot'>"+
+      (ready&&meta.incr?"<span class='ready'>Nächstes Mal +"+fmt(meta.incr)+" kg"+(meta.bw?" Zusatz":"")+"</span>":"")+
+      "</span></div></section>";
+  }).join("");
+
+  return bar+notes+"<div class='exlist'>"+cards+"</div>"+
+    "<div id='savewrap'>"+saveBarHTML()+"</div>";
+}
+
+function numField(label,value,step,exId,i,field){
+  return "<div class='numf'><span class='lbl'>"+label+"</span><div class='numrow'>"+
+    "<button class='step' data-bump='"+exId+"|"+i+"|"+field+"|-1|"+step+"' aria-label='"+label+" verringern'>−</button>"+
+    "<input type='number' inputmode='decimal' value='"+esc(value)+"' placeholder='–' data-in='"+exId+"|"+i+"|"+field+"'>"+
+    "<button class='step' data-bump='"+exId+"|"+i+"|"+field+"|1|"+step+"' aria-label='"+label+" erhöhen'>+</button>"+
+    "</div></div>";
+}
+
+function draftCounts(){
+  var filled=0,total=0,ton=0;
+  Object.keys(S.draft.entries).forEach(function(k){
+    S.draft.entries[k].forEach(function(s){
+      total++; if(s.kg!=="" && s.reps!==""){ filled++; ton+=(Number(s.kg)||0)*(Number(s.reps)||0); }
+    });
+  });
+  return {filled:filled,total:total,ton:ton};
+}
+
+function saveBarHTML(){
+  var c=draftCounts();
+  /* Nichts eingetragen oder bereits gespeichert -> keine Leiste */
+  if(!c.filled || S.saved) return "";
+  return "<div class='savebar' id='savebar'><div class='savemeta'>"+
+    "<span class='big' id='cntFilled'>"+c.filled+"</span>"+
+    "<span class='savesub'>von <span id='cntTotal'>"+c.total+"</span> Sätzen erfasst<br>"+
+    "Tonnage <span id='cntTon'>"+fmt(c.ton)+"</span> kg<br>"+
+    "<span id='autosave'>"+(S.autosavedAt
+      ? "Zwischengespeichert "+timeShort(S.autosavedAt)+" · "+STORAGE_MODE
+      : "Eingaben werden automatisch gesichert · "+STORAGE_MODE)+"</span></span></div>"+
+    "<button class='btn main' id='saveBtn'>Einheit speichern</button></div>";
+}
+
+/* Gezielte Aktualisierung ohne Neuaufbau (Fokus bleibt im Feld) */
+function patchTraining(){
+  var d=S.draft, u=unitById(d.unitId), last=lastByEx();
+  var kal = !S.data.startDate || weekOf(S.data.startDate,d.date)===1;
+  u.ex.forEach(function(ex){
+    var sets=d.entries[ex.id]||[], lp=last[ex.id], meta=META[ex.id]||{};
+    sets.forEach(function(s,i){
+      var row=document.querySelector("[data-row='"+ex.id+"|"+i+"']");
+      if(!row) return;
+      var hit = s.reps!=="" && Number(s.reps)>=ex.max;
+      var und = s.reps!=="" && Number(s.reps)<ex.min;
+      row.classList.toggle("hit",hit); row.classList.toggle("under",und);
+      var pv=row.querySelector(".prev");
+      if(pv) pv.outerHTML = prevHTML(lp&&lp.sets[i], lp&&lp.date, s);
+    });
+    var card=document.querySelector("[data-card='"+ex.id+"']");
+    if(card){
+      var slot=card.querySelector(".readyslot");
+      var ready = !kal && progressionReady(sets,ex);
+      if(slot) slot.innerHTML = ready&&meta.incr
+        ? "<span class='ready'>Nächstes Mal +"+fmt(meta.incr)+" kg"+(meta.bw?" Zusatz":"")+"</span>" : "";
+      var w=card.querySelector(".warm");
+      if(w && ex.warm && !meta.bw){
+        var base=Number(sets[0]&&sets[0].kg)||(lp?Number(lp.sets[0].kg):0);
+        w.innerHTML = "Aufwärmen "+(base>0
+          ? "<b>"+fmt(roundTo(base*0.5,meta.step))+" kg</b> × 5 &nbsp;→&nbsp; <b>"+fmt(roundTo(base*0.78,meta.step))+" kg</b> × 3"
+          : "50 % × 5 → 78 % × 3, sobald ein Arbeitsgewicht steht");
+      }
+    }
+  });
+  var wrap=document.getElementById("savewrap");
+  if(wrap){
+    var wanted = saveBarHTML();
+    var shown = !!wrap.firstChild;
+    /* Nur neu aufbauen, wenn sich der Zustand aendert oder Zahlen abweichen */
+    if((!!wanted) !== shown){ wrap.innerHTML = wanted; }
+    else if(wanted){
+      var c=draftCounts();
+      var f=document.getElementById("cntFilled"); if(f) f.textContent=c.filled;
+      var t=document.getElementById("cntTon"); if(t) t.textContent=fmt(c.ton);
+    }
+  }
+}
+
+/* ---------- Ablauf ---------- */
+function ablaufSteps(u){
+  var out=[], t=0;
+  function push(s){ s.start=t; out.push(s); t+=s.dur; }
+  push({id:"start",kind:"phase",title:"Ankommen und Stufe festlegen",dur:T_ANKOMMEN,body:[
+    "Log öffnen, Einheit und Datum wählen.",
+    "Belastungsstufe A, B oder C ehrlich einschätzen — vor dem ersten Satz, nicht nach dem dritten.",
+    "Stufe B heißt: ein Satz weniger pro Übung, mindestens RIR 3, keine Übung bis zum Versagen.",
+    "Stufe C heißt: kein Krafttraining, stattdessen ein Spaziergang. Die Einheit wird nicht nachgeholt."]});
+  push({id:"warm",kind:"phase",title:"Allgemein aufwärmen",dur:T_AUFWAERMEN,body:WARMUP_GENERAL,
+    foot:"Ziel ist Körpertemperatur und Gelenkspiel, keine Ermüdung. Kein Dehnen vor den Arbeitssätzen."});
+  u.ex.forEach(function(ex,i){
+    push({id:"ex"+i,kind:"ex",ex:ex,index:i+1,title:ex.name,dur:exerciseMinutes(ex)});
+  });
+  push({id:"cool",kind:"phase",title:"Cooldown und Log schließen",dur:T_COOLDOWN,body:[
+    "Gewichte wegräumen — das ist bereits Teil des Herunterfahrens.",
+    "5–10 Min ruhiges Gehen, kein Sprint, keine Treppe.",
+    "Dabei durchgehend verlängerte Ausatmung: vier Zähler ein, acht aus.",
+    "Log auf Vollständigkeit prüfen, offene RIR-Felder ergänzen."],
+    foot:"Sauna direkt danach ist unproblematisch. Eisbad frühestens 4–6 h später oder an Mittwoch, Freitag und Sonntag. Zwischen Trainingsende und Zubettgehen mindestens 2–3 h."});
+  return out;
+}
+
+function execDetailHTML(ex){
+  var e=EXEC[ex.id]||{}, meta=META[ex.id]||{}, h="";
+  h += "<div class='execspec'>"+
+    "<div><span class='lbl'>Sätze × Wdh</span><b class='mono'>"+ex.sets+" × "+ex.min+"–"+ex.max+"</b></div>"+
+    "<div><span class='lbl'>RIR</span><b class='mono'>"+ex.rir+"</b></div>"+
+    "<div><span class='lbl'>Pause</span><b class='mono'>"+ex.pause+"</b></div>"+
+    "<div><span class='lbl'>Tempo</span><b class='mono'>2–3 s ab</b></div></div>";
+  if(ex.warm && !meta.bw) h += blk("","Aufwärmsätze","50 % des Arbeitsgewichts × 5 Wdh, dann 78 % × 3 Wdh. Pause dazwischen 30–60 s, direkt danach der erste Arbeitssatz. Die konkreten Kilos rechnet der Training-Tab aus.");
+  if(meta.bw) h += blk("","Aufwärmsätze","Keine. Die Scapula-Übungen aus dem allgemeinen Aufwärmen reichen für Eigengewichtsübungen.");
+  if(e.aufbau)   h += blk("","Aufbau",e.aufbau);
+  if(e.bewegung) h += blk("","Bewegung",e.bewegung);
+  if(e.fehler)   h += blk("warn","Häufigster Fehler",e.fehler);
+  if(e.abbruch)  h += blk("danger","Abbruch ohne Spotter",e.abbruch);
+  h += "<div class='blk'><span class='blklbl'>In der Pause ("+ex.pause+")</span><ul class='ul'>"+
+    PAUSE_INHALT.map(function(p){ return "<li>"+esc(p)+"</li>"; }).join("")+"</ul></div>";
+  return h;
+}
+function blk(cls,label,text){
+  return "<div class='blk"+(cls?" "+cls:"")+"'><span class='blklbl'>"+label+"</span><p>"+esc(text)+"</p></div>";
+}
+
+function ablaufHTML(){
+  var u=unitById(S.ablaufUnit), steps=ablaufSteps(u), netto=unitMinutes(u);
+  var saetze=u.ex.reduce(function(s,e){ return s+e.sets; },0);
+  var head = "<div class='card'>"+unitPick(S.ablaufUnit,"abunit")+
+    "<p class='p intro'>"+esc(UNIT_INTRO[S.ablaufUnit])+"</p>"+
+    "<div class='abmeta'><span><b>"+saetze+"</b> Arbeitssätze</span>"+
+    "<span><b>"+Math.round(netto)+"</b> Min Training</span>"+
+    "<span><b>+"+T_COOLDOWN+"</b> Min Cooldown</span>"+
+    "<span>Priorität <b>"+u.prio+"</b></span></div>"+
+    "<p class='timenote'>Die Zeit gilt bei eingehaltenen Pausen. Wird es enger als 60 Minuten, koppelst du Übung 6 und 7 antagonistisch mit je 2 Min Wechselpause — Sätze streichen und Pausen kürzen ist keine Option.</p></div>";
+
+  var items = steps.map(function(s){
+    var open = S.openStep===s.id;
+    var body="";
+    if(open){
+      if(s.kind==="phase"){
+        body = "<div class='tl-body'><ol class='ol'>"+s.body.map(function(b){ return "<li>"+esc(b)+"</li>"; }).join("")+"</ol>"+
+          (s.foot?"<p class='tl-foot'>"+esc(s.foot)+"</p>":"")+"</div>";
+      } else {
+        body = "<div class='tl-body'>"+execDetailHTML(s.ex)+"</div>";
+      }
+    }
+    return "<li class='tl "+(s.kind==="ex"?u.accent:"")+"'>"+
+      "<button class='tl-head' data-step='"+s.id+"'>"+
+      "<span class='tl-time'>"+clock(s.start)+"<i>+"+Math.round(s.dur)+"</i></span>"+
+      "<span class='tl-title'>"+(s.kind==="ex"?"<span class='tl-idx'>"+s.index+"</span>":"")+esc(s.title)+
+      (s.kind==="ex"&&s.ex.hint?" <i>"+esc(s.ex.hint)+"</i>":"")+"</span>"+
+      (s.kind==="ex"?"<span class='tl-spec mono'>"+s.ex.sets+" × "+s.ex.min+"–"+s.ex.max+"</span>":"")+
+      "<span class='chev'>"+(open?"−":"+")+"</span></button>"+body+"</li>";
+  }).join("");
+
+  return head+"<ol class='timeline'>"+items+"</ol>";
+}
+
+/* ---------- Verlauf ---------- */
+function allExIds(){
+  var seen={}, out=[];
+  UNITS.forEach(function(u){ u.ex.forEach(function(e){ if(!seen[e.id]){ seen[e.id]=1; out.push(e.id); } }); });
+  return out;
+}
+
+function sparkline(series){
+  if(series.length<2) return "<p class='p mut'>Ab der zweiten Einheit erscheint hier die Kurve.</p>";
+  var W=300,H=110,pad=6;
+  var vals=series.map(function(p){ return p.kg; });
+  var mn=Math.min.apply(null,vals), mx=Math.max.apply(null,vals);
+  if(mx===mn){ mx=mn+1; mn=mn-1; }
+  var pts=series.map(function(p,i){
+    var x=pad+i*(W-2*pad)/(series.length-1);
+    var y=H-pad-(p.kg-mn)/(mx-mn)*(H-2*pad);
+    return [x,y];
+  });
+  var line=pts.map(function(p){ return p[0].toFixed(1)+","+p[1].toFixed(1); }).join(" ");
+  var dots=pts.map(function(p){ return "<circle cx='"+p[0].toFixed(1)+"' cy='"+p[1].toFixed(1)+"' r='3' fill='#4FC8B4'/>"; }).join("");
+  var grid=[0,0.5,1].map(function(f){ var y=pad+f*(H-2*pad);
+    return "<line x1='"+pad+"' y1='"+y+"' x2='"+(W-pad)+"' y2='"+y+"' stroke='#2B322E' stroke-dasharray='2 4'/>"; }).join("");
+  return "<div class='chartwrap'><svg viewBox='0 0 "+W+" "+H+"' width='100%' height='150' preserveAspectRatio='none'>"+
+    grid+"<polyline points='"+line+"' fill='none' stroke='#4FC8B4' stroke-width='2'/>"+dots+"</svg>"+
+    "<div class='row' style='justify-content:space-between;font-size:11px;color:var(--mut);margin-top:4px'>"+
+    "<span>"+series[0].datum+" · "+fmt(series[0].kg)+" kg</span>"+
+    "<span>"+series[series.length-1].datum+" · "+fmt(series[series.length-1].kg)+" kg</span></div></div>";
+}
+
+function verlaufHTML(){
+  var sessions=S.data.sessions.slice().sort(function(a,b){ return a.date<b.date?-1:1; });
+  if(!sessions.length){
+    return "<div class='card empty'><h3>Noch keine Einheit erfasst</h3>"+
+      "<p class='p mut'>Trage im Tab <b>Training</b> die erste Einheit ein. Danach erscheinen hier die Gewichtsverläufe je Übung, die Tonnage pro Einheit und der Hinweis, wenn eine Übung drei Einheiten lang stagniert.</p></div>";
+  }
+  var exId=S.verlaufEx;
+  var series=[];
+  sessions.forEach(function(s){
+    if(!s.sets[exId]) return;
+    var sets=s.sets[exId];
+    var top=Math.max.apply(null,sets.map(function(x){ return Number(x.kg)||0; }));
+    series.push({datum:dateShort(s.date),date:s.date,kg:top,ton:Math.round(tonnage(sets)),sets:sets,week:s.week});
+  });
+  var totalTon=0;
+  sessions.forEach(function(s){ Object.keys(s.sets).forEach(function(k){ totalTon+=tonnage(s.sets[k]); }); });
+  var lastS=sessions[sessions.length-1];
+
+  var stalled=false;
+  if(series.length>=3){
+    var l3=series.slice(-3).map(function(p){ return p.kg; });
+    stalled = l3[0]===l3[1] && l3[1]===l3[2];
+  }
+
+  var stats="<div class='stats'>"+
+    stat(sessions.length,"Einheiten")+
+    stat(weekOf(S.data.startDate,today()),"aktuelle Woche")+
+    stat((totalTon/1000).toFixed(1).replace(".",","),"Tonnen gesamt")+
+    stat(dateShort(lastS.date),"letzte Einheit")+"</div>";
+
+  var opts=allExIds().map(function(id){
+    return "<option value='"+id+"'"+(id===exId?" selected":"")+">"+esc(META[id].label)+"</option>";
+  }).join("");
+
+  var body;
+  if(series.length){
+    var rows=series.slice().reverse().map(function(p){
+      return "<tr><td>"+p.datum+"</td><td class='mut'>"+(p.week||"–")+"</td><td class='mono'>"+
+        p.sets.map(function(x){ return fmt(Number(x.kg))+"×"+x.reps+(x.rir!==""?"@"+x.rir:""); }).join(" · ")+
+        "</td><td class='r mono'>"+p.ton+"</td></tr>";
+    }).join("");
+    body = sparkline(series)+
+      (stalled?"<div class='note b'><b>Keine Steigerung über drei Einheiten.</b> Kandidat für Deload oder Technikanalyse — nicht für zusätzliches Volumen.</div>":"")+
+      "<table><thead><tr><th>Datum</th><th>Wo.</th><th>Sätze</th><th class='r'>Tonnage</th></tr></thead><tbody>"+rows+"</tbody></table>";
+  } else {
+    body = "<p class='p mut'>Für diese Übung ist noch nichts erfasst.</p>";
+  }
+
+  var csv="";
+  if(S.showCsv){
+    var lines=["Datum;Woche;Einheit;Stufe;Uebung;Satz;kg;Wdh;RIR"];
+    sessions.forEach(function(s){
+      Object.keys(s.sets).forEach(function(ex){
+        s.sets[ex].forEach(function(x,i){
+          lines.push([s.date,s.week,s.unit,s.stufe||"A",(META[ex]||{}).label||ex,i+1,x.kg,x.reps,x.rir].join(";"));
+        });
+      });
+    });
+    csv="<textarea class='csv' readonly>"+esc(lines.join("\n"))+"</textarea>";
+  }
+
+  return stats+
+    "<div class='card'><label class='field'><span>Übung</span><select id='exSelect'>"+opts+"</select></label>"+body+"</div>"+
+    "<div class='card'><div class='row' style='gap:8px'>"+
+    "<button class='btn' id='csvBtn'>"+(S.showCsv?"CSV ausblenden":"Daten als CSV anzeigen")+"</button>"+
+    "<button class='btn' id='exportBtn'>CSV herunterladen</button></div>"+csv+"</div>"+
+
+    "<div class='card'><h3 class='h3'>Sicherung</h3>"+
+    "<p class='p mut'>Die Daten liegen ausschließlich auf diesem Gerät ("+STORAGE_MODE+"). Lade dir nach jeder Woche eine Sicherung herunter — damit ziehst du deinen Verlauf auch auf ein anderes Handy um.</p>"+
+    "<div class='row' style='gap:8px'>"+
+    "<button class='btn' id='backupBtn'>Sicherung speichern</button>"+
+    "<label class='btn' for='importFile'>Sicherung laden</label>"+
+    "<input type='file' id='importFile' accept='.json,application/json' style='display:none'>"+
+    "<button class='btn danger' id='clearBtn'>Alle Daten löschen</button></div></div>"+ ghCardHTML();
+}
+function stat(n,l){ return "<div class='stat'><span class='statnum'>"+n+"</span><span class='statlbl'>"+l+"</span></div>"; }
+
+function ghCardHTML(){
+  var offen = S.ghOpen;
+  var kopf = "<div class='card'><button class='ghhead' id='ghToggle'>"+
+    "<span class='h3' style='margin:0'>Abgleich mit GitHub</span>"+
+    "<span class='ghstate'>"+(ghReady()?"eingerichtet":"nicht eingerichtet")+"</span>"+
+    "<span class='chev'>"+(offen?"−":"+")+"</span></button>";
+  if(!offen) return kopf+"</div>";
+
+  return kopf+
+    "<p class='p mut' style='margin-top:10px'>Legt deinen Verlauf als JSON-Datei in einem Repository ab, damit Handy und Rechner denselben Stand haben. Nimm dafür ein <b>privates</b> Repository — nicht das, aus dem die App geladen wird.</p>"+
+    "<div class='row'>"+
+    "<label class='field'><span>Token</span><input type='password' id='ghToken' value='"+esc(GH.token)+"' placeholder='github_pat_…' autocomplete='off'></label>"+
+    "</div><div class='row'>"+
+    "<label class='field'><span>Konto</span><input type='text' id='ghOwner' value='"+esc(GH.owner)+"' placeholder='Chris1576' autocomplete='off'></label>"+
+    "<label class='field'><span>Repository</span><input type='text' id='ghRepo' value='"+esc(GH.repo)+"' placeholder='trainingsdaten' autocomplete='off'></label>"+
+    "</div><div class='row'>"+
+    "<label class='field'><span>Dateiname</span><input type='text' id='ghPath' value='"+esc(GH.path)+"' autocomplete='off'></label>"+
+    "<label class='field'><span>Branch</span><input type='text' id='ghBranch' value='"+esc(GH.branch)+"' autocomplete='off'></label>"+
+    "</div>"+
+    "<label class='ghauto'><input type='checkbox' id='ghAuto'"+(GH.auto?" checked":"")+"> Nach jedem Speichern automatisch hochladen</label>"+
+    "<div class='row' style='gap:8px;margin-top:10px'>"+
+    "<button class='btn' id='ghSave'>Zugang speichern</button>"+
+    "<button class='btn' id='ghUp'>Jetzt hochladen</button>"+
+    "<button class='btn' id='ghDown'>Von GitHub laden</button></div>"+
+    "<p class='p mut' id='ghStatus' style='margin:9px 0 0'>"+
+    (GH.lastSync ? "Zuletzt abgeglichen "+dateShort(GH.lastSync.slice(0,10))+" "+GH.lastSync.slice(11,16) : "Noch kein Abgleich")+"</p>"+
+    "<div class='blk'><span class='blklbl'>Token erzeugen</span><p>GitHub → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b>. Unter „Repository access“ nur das eine Datenrepository auswählen, unter „Permissions“ bei <b>Contents</b> auf <b>Read and write</b> stellen. Das Token bleibt nur auf diesem Gerät und steht nicht in der App-Datei.</p></div></div>";
+}
+
+/* ---------- Plan ---------- */
+function planHTML(){
+  var week=[["Mo","Tennis",""],["Di","GK 1","a1"],["Mi","Pause",""],["Do","GK 2","a2"],
+            ["Fr","Pause",""],["Sa","GK 3","a3"],["So","Gehen",""]];
+  var head="<div class='card'><h3 class='h3'>Alle drei Einheiten sind Ganzkörpereinheiten</h3>"+
+    "<p class='p'>Jede Einheit trainiert Beine, Brust, Rücken, Schulter und Arme. Die Priorität legt nur fest, was zuerst kommt und einen Satz mehr bekommt. Jeder Muskel wird 3× pro Woche gereizt. Der Plan läuft 8 Wochen unverändert — keine Übungsrotation.</p>"+
+    "<p class='p mut'>Trainingstage sind Dienstag, Donnerstag und Samstag. Montag ist Tennis, dazwischen liegt jeweils ein voller Pausentag. Mittwoch, Freitag und Sonntag sind die Tage für Eisbad und ruhiges Gehen.</p>"+
+    "<div class='week'>"+week.map(function(w){
+      return "<div class='wday "+w[2]+"'><span class='wd'>"+w[0]+"</span><span class='wt'>"+w[1]+"</span></div>";
+    }).join("")+"</div></div>";
+
+  var units=UNITS.map(function(u){
+    var open=S.openPlan===u.id, tbl="";
+    if(open){
+      tbl="<div class='plantable'><table><thead><tr><th></th><th>Übung</th><th class='c'>Sätze × Wdh</th>"+
+        "<th class='c'>RIR</th><th class='c'>Pause</th></tr></thead><tbody>"+
+        u.ex.map(function(e,i){
+          return "<tr"+(e.prio?" class='p'":"")+"><td class='tidx'>"+(i+1)+"</td><td><b>"+esc(e.name)+"</b>"+
+            (e.hint?" <i class='mut'>"+esc(e.hint)+"</i>":"")+"</td>"+
+            "<td class='c mono'>"+e.sets+" × "+e.min+"–"+e.max+"</td>"+
+            "<td class='c mono'>"+e.rir+"</td><td class='c mono'>"+e.pause+"</td></tr>";
+        }).join("")+"</tbody><tfoot><tr><td colspan='5'>"+
+        u.ex.reduce(function(s,e){ return s+e.sets; },0)+" Arbeitssätze · ca. "+
+        Math.round(unitMinutes(u))+" Min ohne Cooldown</td></tr></tfoot></table></div>";
+    }
+    return "<div class='planunit "+u.accent+"'><button class='planhead' data-plan='"+u.id+"'>"+
+      "<span class='planname'>Ganzkörper "+u.n+" <i>"+u.day+"</i></span>"+
+      "<span class='planprio'>Priorität "+u.prio+"</span>"+
+      "<span class='chev'>"+(open?"−":"+")+"</span></button>"+tbl+"</div>";
+  }).join("");
+
+  return head+units;
+}
+
+/* ---------- Referenz ---------- */
+function referenzHTML(){
+  var warmRows=[["<b>Satz 1</b> <i class='mut'>ca. 50 % Arbeitsgewicht</i>","5 Wdh"],
+    ["<b>Satz 2</b> <i class='mut'>ca. 75–80 %</i>","2–3 Wdh"],
+    ["Zweite Übung im gleichen Muster","1 × 70 % × 3"],
+    ["Klimmzug / Dips mit Eigengewicht","keine"],
+    ["Seitheben, Curls, Trizeps, Waden","keine"]];
+  var steig=[["Kniebeuge","+2,5 – 5 kg"],["Rumänisches Kreuzheben","+2,5 – 5 kg"],["LH-Bankdrücken","+2 – 2,5 kg"],
+    ["LH-Überkopfdrücken","+1 – 2 kg"],["LH-Rudern","+2,5 kg"],["Klimmzug / Dips","erst Wdh, dann +1 – 2,5 kg"],
+    ["Kurzhanteln","kleinste Stufe"]];
+  var regeln=["Dienstag, Donnerstag, Samstag trainieren.","Ganzkörper 1–3 in fester Reihenfolge, keine Rotation.",
+    "Nur die angegebenen Arbeitssätze — kein Zusatzvolumen.","Grundübungen RIR 1–2, Isolation RIR 0–1.",
+    "Gewicht erst erhöhen, wenn alle Sätze die Obergrenze erreichen.","Satzpausen einhalten: 2–4 Min, nicht verkürzen.",
+    "Jeden Satz protokollieren: Gewicht × Wdh × RIR.","Schlechte Technik zählt nicht als Progression.",
+    "Mindestens ein voller Pausentag zwischen den Einheiten.","Plan 8 Wochen unverändert durchziehen, dann bewerten."];
+
+  return "<div class='card'><h3 class='h3'>Diese App</h3>"+
+    "<p class='p'>Sie besteht aus einer einzigen Datei und lädt nichts nach — sie funktioniert vollständig ohne Internet, auch im Flugmodus oder im Keller ohne Empfang.</p>"+
+    "<p class='p mut'>Eingaben werden beim Tippen automatisch gesichert — aktuell "+STORAGE_MODE+". Wenn du die App mitten in der Einheit schließt, steht beim nächsten Öffnen alles wieder da. Erst beim Antippen von <b>Einheit speichern</b> wandert die Einheit in den Verlauf.</p>"+
+    "<p class='p mut'>Zum Ablegen auf dem Startbildschirm: im Browser auf Teilen und dann <b>Zum Home-Bildschirm</b>. Danach startet sie wie eine normale App.</p></div>"+
+
+    "<div class='card'><h3 class='h3'>Aufwärmen — 2 Sätze pro schwerer Übung</h3><table><tbody>"+
+    warmRows.map(function(r){ return "<tr><td>"+r[0]+"</td><td class='r mono'>"+r[1]+"</td></tr>"; }).join("")+
+    "</tbody></table><p class='p mut'>Pause zwischen Aufwärmsätzen 30–60 s. Zählen nicht als Arbeitssätze. Ab ca. 100 kg Arbeitsgewicht einen dritten Zwischensatz einschieben.</p>"+
+    "<div class='warmgeneral'><b>Allgemein, 5–7 Min</b><ol>"+
+    WARMUP_GENERAL.map(function(w){ return "<li>"+esc(w)+"</li>"; }).join("")+"</ol></div></div>"+
+
+    "<div class='card'><h3 class='h3'>Doppelte Progression</h3><ol class='ol'>"+
+    "<li>Erreiche in allen Sätzen die Obergrenze der Spanne.</li>"+
+    "<li>Bei mind. RIR 1 im letzten Satz und sauberer Technik → Gewicht erhöhen.</li>"+
+    "<li>Rückfall auf die Untergrenze ist normal — wieder hocharbeiten.</li></ol>"+
+    "<p class='p mut'>Die App markiert einen Satz, sobald er die Obergrenze erreicht, und schlägt die Steigerung erst vor, wenn alle Sätze sitzen.</p>"+
+    "<table><tbody>"+steig.map(function(r){ return "<tr><td>"+r[0]+"</td><td class='r mono'>"+r[1]+"</td></tr>"; }).join("")+"</tbody></table>"+
+    "<div class='forbid'><b>Verboten als Progression</b><ul><li>unsaubere Teilwiederholungen</li>"+
+    "<li>erzwungene Wiederholungen</li><li>verkürzter Bewegungsumfang</li><li>Verkürzung der Satzpausen</li></ul></div></div>"+
+
+    "<div class='card'><h3 class='h3'>Deload</h3>"+
+    "<p class='p'>Planmäßig nach 6–8 Belastungswochen, früher sobald mindestens zwei Kriterien zutreffen: Leistungsabfall in zwei aufeinanderfolgenden Einheiten, Muskelkater über 72 h, verschlechterte Schlafqualität, Gelenkbeschwerden, Motivationseinbruch, Ruhepuls deutlich über Normalwert.</p>"+
+    "<p class='p'><b>Deload-Woche:</b> nur ein Arbeitssatz pro Übung, gleiches Gewicht oder −10 bis 15 %, konsequent RIR 3–4, kein Versagen. Wiedereinstieg mit 90–95 % der letzten Arbeitsgewichte.</p></div>"+
+
+    "<div class='card'><h3 class='h3'>Belastungsstaffelung</h3>"+
+    ["A","B","C"].map(function(k){
+      return "<div class='stufe s"+k+"'><div class='stufelbl'>"+STUFEN[k].label+" — "+STUFEN[k].sub+"</div>"+STUFEN[k].text+"</div>";
+    }).join("")+
+    "<ul class='ul'><li>Kein schweres Training + Sauna + Eisbad am selben Tag</li>"+
+    "<li>Eisbad nicht direkt post-workout — mind. 4–6 h Abstand oder auf Mi / Fr / So legen</li>"+
+    "<li>Sauna post-workout unproblematisch</li>"+
+    "<li>Kein Training in den letzten 2–3 h vor dem Schlaf</li>"+
+    "<li>Nach dem Training 5–10 Min ruhiges Gehen mit verlängerter Ausatmung</li></ul></div>"+
+
+    "<div class='card'><h3 class='h3'>Die zehn verbindlichen Regeln</h3><ol class='ol'>"+
+    regeln.map(function(r){ return "<li>"+esc(r)+"</li>"; }).join("")+"</ol></div>";
+}
+</script>
+<script>
+/* ============================================================
+   INTERAKTION
+   ============================================================ */
+function persist(){
+  return store.set(KEY, S.data).catch(function(){
+    toast("Speichern fehlgeschlagen");
+  });
+}
+
+function saveSession(){
+  var d=S.draft, clean={}, any=false;
+  Object.keys(d.entries).forEach(function(ex){
+    var valid=d.entries[ex].filter(function(s){ return s.kg!=="" && s.reps!==""; });
+    if(valid.length){ clean[ex]=valid; any=true; }
+  });
+  if(!any) return;
+  if(!S.data.startDate) S.data.startDate=d.date;
+  var week=weekOf(S.data.startDate,d.date);
+  S.data.sessions = S.data.sessions.filter(function(s){ return !(s.date===d.date && s.unit===d.unitId); });
+  S.data.sessions.push({id:d.date+"-"+d.unitId,date:d.date,unit:d.unitId,week:week,stufe:d.stufe,
+    sets:clean,savedAt:Date.now()});
+  S.saved=true;
+  S.autosavedAt=null;
+  clearTimeout(_draftTimer);
+  persist().then(function(){
+    return store.del(DRAFTKEY);
+  }).then(function(){
+    toast("Einheit gespeichert");
+    render();
+    if(GH.auto && ghReady()) syncUp(true);
+  });
+}
+
+function downloadCsv(){
+  var lines=["Datum;Woche;Einheit;Stufe;Uebung;Satz;kg;Wdh;RIR"];
+  S.data.sessions.slice().sort(function(a,b){ return a.date<b.date?-1:1; }).forEach(function(s){
+    Object.keys(s.sets).forEach(function(ex){
+      s.sets[ex].forEach(function(x,i){
+        lines.push([s.date,s.week,s.unit,s.stufe||"A",(META[ex]||{}).label||ex,i+1,x.kg,x.reps,x.rir].join(";"));
+      });
+    });
+  });
+  try{
+    var blob=new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="Trainingslog.csv";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500);
+  }catch(e){
+    S.showCsv=true; render(); toast("Download nicht möglich — CSV wird angezeigt");
+  }
+}
+
+document.addEventListener("click",function(ev){
+  var el=ev.target.closest ? ev.target.closest("[data-tab],[data-unit],[data-abunit],[data-stufe],[data-step],[data-plan],[data-rir],[data-bump],#saveBtn,#csvBtn,#clearBtn,#exportBtn,#backupBtn,#ghToggle,#ghSave,#ghUp,#ghDown") : null;
+  if(!el) return;
+
+  var v;
+  if((v=el.getAttribute("data-tab"))){ S.tab=v; render(); window.scrollTo(0,0); return; }
+
+  if((v=el.getAttribute("data-unit"))){
+    if(v!==S.draft.unitId){ buildDraft(v,S.draft.stufe,S.draft.date); saveDraftSoon(); render(); }
+    return;
+  }
+  if((v=el.getAttribute("data-abunit"))){ S.ablaufUnit=v; S.openStep="start"; render(); return; }
+  if((v=el.getAttribute("data-stufe"))){
+    if(v!==S.draft.stufe){ buildDraft(S.draft.unitId,v,S.draft.date); saveDraftSoon(); render(); }
+    return;
+  }
+  if((v=el.getAttribute("data-step"))){ S.openStep = S.openStep===v ? "" : v; render(); return; }
+  if((v=el.getAttribute("data-plan"))){ S.openPlan = S.openPlan===v ? "" : v; render(); return; }
+
+  if((v=el.getAttribute("data-rir"))){
+    var p=v.split("|"), s=S.draft.entries[p[0]][Number(p[1])];
+    s.rir = String(s.rir)===p[2] ? "" : p[2];
+    el.parentNode.querySelectorAll(".rirbtn").forEach(function(b){
+      b.classList.toggle("on", b.getAttribute("data-rir")===p[0]+"|"+p[1]+"|"+s.rir);
+    });
+    S.saved=false; patchTraining(); saveDraftSoon(); return;
+  }
+
+  if((v=el.getAttribute("data-bump"))){
+    var q=v.split("|"), ex=q[0], i=Number(q[1]), field=q[2], dir=Number(q[3]), step=Number(q[4]);
+    var st=S.draft.entries[ex][i];
+    var cur = st[field]==="" ? 0 : Number(st[field]);
+    var next = Math.max(0, Math.round((cur+dir*step)*100)/100);
+    st[field]=String(next);
+    var input=document.querySelector("[data-in='"+ex+"|"+i+"|"+field+"']");
+    if(input) input.value=next;
+    S.saved=false; patchTraining(); saveDraftSoon(); return;
+  }
+
+  if(el.id==="saveBtn"){ saveSession(); return; }
+  if(el.id==="csvBtn"){ S.showCsv=!S.showCsv; render(); return; }
+  if(el.id==="exportBtn"){ downloadCsv(); return; }
+  if(el.id==="backupBtn"){ downloadBackup(); return; }
+  if(el.id==="ghToggle"){ S.ghOpen=!S.ghOpen; render(); return; }
+  if(el.id==="ghSave"){
+    GH.token  = document.getElementById("ghToken").value.trim();
+    GH.owner  = document.getElementById("ghOwner").value.trim();
+    GH.repo   = document.getElementById("ghRepo").value.trim();
+    GH.path   = document.getElementById("ghPath").value.trim() || "trainingslog.json";
+    GH.branch = document.getElementById("ghBranch").value.trim() || "main";
+    GH.auto   = document.getElementById("ghAuto").checked;
+    GH_SHA = null;
+    store.set(GHKEY, GH).then(function(){ render(); toast(ghReady()?"Zugang gespeichert":"Angaben unvollständig"); });
+    return;
+  }
+  if(el.id==="ghUp"){
+    if(!ghReady()){ toast("Zuerst Zugang speichern"); return; }
+    syncUp(false); return;
+  }
+  if(el.id==="ghDown"){
+    if(!ghReady()){ toast("Zuerst Zugang speichern"); return; }
+    syncDown(); return;
+  }
+  if(el.id==="clearBtn"){
+    if(confirm("Alle erfassten Einheiten löschen? Das lässt sich nicht rückgängig machen.")){
+      S.data={startDate:null,sessions:[]};
+      buildDraft(S.draft.unitId,S.draft.stufe,S.draft.date);
+      persist().then(function(){ render(); toast("Daten gelöscht"); });
+    }
+    return;
+  }
+});
+
+function downloadFile(name, text, mime){
+  try{
+    var blob=new Blob(["\ufeff"+text],{type:mime});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download=name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500);
+    return true;
+  }catch(e){ return false; }
+}
+
+function downloadBackup(){
+  var name = "Trainingslog-Sicherung-"+today()+".json";
+  if(downloadFile(name, JSON.stringify(S.data,null,1), "application/json")) toast("Sicherung gespeichert");
+  else toast("Download nicht möglich");
+}
+
+document.addEventListener("change",function(ev){
+  if(ev.target.id!=="importFile") return;
+  var f=ev.target.files && ev.target.files[0];
+  if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var obj=JSON.parse(r.result);
+      if(!obj || !Array.isArray(obj.sessions)) throw new Error("Format");
+      if(!confirm("Sicherung mit "+obj.sessions.length+" Einheiten laden? Die aktuellen Daten auf diesem Gerät werden ersetzt.")) return;
+      S.data={startDate:obj.startDate||null, sessions:obj.sessions};
+      persist().then(function(){ render(); toast("Sicherung geladen"); });
+    }catch(e){ toast("Datei nicht lesbar"); }
+  };
+  r.readAsText(f);
+});
+
+document.addEventListener("input",function(ev){
+  var t=ev.target, v;
+  if((v=t.getAttribute && t.getAttribute("data-in"))){
+    var p=v.split("|");
+    S.draft.entries[p[0]][Number(p[1])][p[2]] = t.value;
+    S.saved=false;
+    patchTraining();
+    saveDraftSoon();
+    return;
+  }
+  if(t.id==="dateInput"){
+    S.draft.date=t.value; S.saved=false; saveDraftSoon();
+    return;
+  }
+  if(t.id==="exSelect"){ S.verlaufEx=t.value; render(); return; }
+});
+
+document.addEventListener("change",function(ev){
+  if(ev.target.id==="exSelect"){ S.verlaufEx=ev.target.value; render(); }
+});
+
+/* ============================================================
+   START
+   ============================================================ */
+initStorage()
+  .then(function(){ return store.get(GHKEY); })
+  .then(function(cfg){ if(cfg) GH = Object.assign(GH, cfg); return store.get(KEY); })
+  .then(function(saved){
+    if(saved && saved.sessions) S.data=saved;
+    return store.get(DRAFTKEY);
+  })
+  .then(function(draft){
+    if(draftValid(draft)){
+      S.draft = draft;
+      S.saved = false;
+      S.autosavedAt = new Date();
+    } else {
+      buildDraft(suggestedUnit(),"A",today());
+    }
+    render();
+    if(draftValid(draft)) toast("Laufende Einheit wiederhergestellt");
+  });
+
+/* Beim Verlassen der Seite sofort sichern, ohne auf den Timer zu warten */
+window.addEventListener("pagehide", function(){
+  if(S.draft && !S.saved) { clearTimeout(_draftTimer); store.set(DRAFTKEY, S.draft); }
+});
+document.addEventListener("visibilitychange", function(){
+  if(document.visibilityState==="hidden" && S.draft && !S.saved){
+    clearTimeout(_draftTimer); store.set(DRAFTKEY, S.draft);
+  }
+});
+</script>
+</body>
+</html>
