@@ -1146,7 +1146,8 @@ function ghCardHTML(){
       "<p class='p mut' style='margin-top:10px'>Deine Einheiten werden automatisch über einen sicheren Sync-Server gespeichert und auf allen Geräten abgeglichen — nach jedem Speichern hoch, beim Öffnen und Zurückkehren wieder herunter. Du musst hier <b>nichts</b> eintragen.</p>"+
       "<div class='row' style='gap:8px;margin-top:10px'>"+
       "<button class='btn' id='ghUp'>Jetzt hochladen</button>"+
-      "<button class='btn' id='ghDown'>Jetzt herunterladen</button></div>"+
+      "<button class='btn' id='ghDown'>Jetzt herunterladen</button>"+
+      "<button class='btn' id='ghForce'>GitHub-Stand übernehmen</button></div>"+
       "<p class='p mut' id='ghStatus' style='margin:9px 0 0'>Bereit.</p></div>";
   }
 
@@ -1165,7 +1166,8 @@ function ghCardHTML(){
     "<div class='row' style='gap:8px;margin-top:10px'>"+
     "<button class='btn' id='ghSave'>Zugang speichern</button>"+
     "<button class='btn' id='ghUp'>Jetzt hochladen</button>"+
-    "<button class='btn' id='ghDown'>Von GitHub laden</button></div>"+
+    "<button class='btn' id='ghDown'>Von GitHub laden</button>"+
+    "<button class='btn' id='ghForce'>GitHub-Stand übernehmen</button></div>"+
     "<p class='p mut' id='ghStatus' style='margin:9px 0 0'>"+
     (ghReady()
       ? "Ziel: "+esc(GH.owner)+"/"+esc(GH.repo)+"/"+esc(GH.path)+" · "+
@@ -1329,7 +1331,7 @@ function downloadCsv(){
 }
 
 document.addEventListener("click",function(ev){
-  var el=ev.target.closest ? ev.target.closest("[data-tab],[data-unit],[data-abunit],[data-stufe],[data-step],[data-plan],[data-rir],[data-bump],#saveBtn,#csvBtn,#clearBtn,#exportBtn,#backupBtn,#ghToggle,#ghSave,#ghUp,#ghDown") : null;
+  var el=ev.target.closest ? ev.target.closest("[data-tab],[data-unit],[data-abunit],[data-stufe],[data-step],[data-plan],[data-rir],[data-bump],#saveBtn,#csvBtn,#clearBtn,#exportBtn,#backupBtn,#ghToggle,#ghSave,#ghUp,#ghDown,#ghForce") : null;
   if(!el) return;
 
   var v;
@@ -1402,6 +1404,20 @@ document.addEventListener("click",function(ev){
   if(el.id==="ghDown"){
     if(!ghReady()){ toast("Zuerst Zugang speichern"); return; }
     syncDown(false); return;
+  }
+  if(el.id==="ghForce"){
+    if(!ghReady()){ toast("Zuerst Zugang speichern"); return; }
+    if(!confirm("Den Stand von GitHub übernehmen? Nicht hochgeladene Änderungen auf DIESEM Gerät werden dabei überschrieben.")) return;
+    ghStatus("Lade herunter …");
+    ghFetch().then(function(remote){
+      if(!remote || !Array.isArray(remote.sessions)){ toast("Auf GitHub liegt noch keine Datei"); return; }
+      S.data = { startDate: remote.startDate || null, sessions: remote.sessions };
+      return persist().then(function(){
+        ghStatus("GitHub-Stand übernommen · " + timeShort(new Date()));
+        render(); toast("GitHub-Stand übernommen");
+      });
+    }).catch(function(e){ ghStatus("Fehlgeschlagen: " + e.message); toast(e.message); });
+    return;
   }
   if(el.id==="clearBtn"){
     if(confirm("Alle erfassten Einheiten löschen? Das lässt sich nicht rückgängig machen.")){
