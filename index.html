@@ -463,10 +463,18 @@ function initStorage(){
    GITHUB-ABGLEICH
    ============================================================ */
 var GHKEY = "gk3:gh";
-var GH = { token:"", owner:"", repo:"", path:"trainingslog.json", branch:"main", auto:true };
+/* ==== Sync-Server (Cloudflare Worker) ============================
+   Hier die Adresse deines Sync-Servers eintragen, z.B.:
+     var SYNC_URL = "https://trainingslog.DEINNAME.workers.dev";
+   Ist sie gesetzt, laeuft alles automatisch ueber den Server —
+   auf keinem Geraet muss ein Token eingegeben werden.
+   Bleibt sie leer, benutzt die App den direkten GitHub-Weg (mit Token).
+   ================================================================= */
+var SYNC_URL = "";
+var GH = { token:"", owner:"Chris1576", repo:"Training", path:"Training.json", branch:"main", auto:true };
 var GH_SHA = null;
 
-function ghReady(){ return !!(GH.token && GH.owner && GH.repo && GH.path); }
+function ghReady(){ return !!SYNC_URL || !!(GH.token && GH.owner && GH.repo && GH.path); }
 
 function b64enc(str){
   var bytes = new TextEncoder().encode(str), bin = "";
@@ -497,6 +505,12 @@ function ghFehler(r){
 
 /* Holt die Datei; gibt null zurueck, wenn es sie noch nicht gibt */
 function ghFetch(){
+  if(SYNC_URL){
+    return fetch(SYNC_URL+"?t="+Date.now(), {cache:"no-store"}).then(function(r){
+      if(!r.ok) throw new Error("Sync-Server: Fehler "+r.status);
+      return r.json();   /* Datenobjekt oder null */
+    });
+  }
   return fetch(ghUrl()+"?ref="+encodeURIComponent(GH.branch)+"&t="+Date.now(),
     {headers:ghHeaders(), cache:"no-store"}).then(function(r){
       if(r.status===404){ GH_SHA=null; return null; }
@@ -509,6 +523,13 @@ function ghFetch(){
 }
 
 function ghPut(obj){
+  if(SYNC_URL){
+    return fetch(SYNC_URL, {method:"PUT", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(obj)}).then(function(r){
+        if(!r.ok) throw new Error("Sync-Server: Fehler "+r.status);
+        return true;
+      });
+  }
   var body = { message:"Trainingslog "+today(), content:b64enc(JSON.stringify(obj,null,1)), branch:GH.branch };
   if(GH_SHA) body.sha = GH_SHA;
   return fetch(ghUrl(), {method:"PUT", headers:ghHeaders(), body:JSON.stringify(body)})
@@ -560,23 +581,29 @@ function syncUp(silent){
     });
 }
 
-function syncDown(){
+function syncDown(silent){
   if(!ghReady()) return Promise.resolve();
   ghStatus("Lade herunter …");
   return ghFetch()
     .then(function(remote){
-      if(!remote || !Array.isArray(remote.sessions)) { ghStatus("Auf GitHub liegt noch keine Datei"); return; }
+      if(!remote || !Array.isArray(remote.sessions)) {
+        ghStatus("Auf GitHub liegt noch keine Datei");
+        if(!silent) toast("Auf GitHub liegt noch keine Datei");
+        return;
+      }
       var vorher = S.data.sessions.length;
       S.data.sessions = mergeSessions(S.data.sessions, remote.sessions);
       if(remote.startDate && (!S.data.startDate || remote.startDate < S.data.startDate))
         S.data.startDate = remote.startDate;
       return persist().then(function(){
         var neu = S.data.sessions.length - vorher;
+        ghStatus("Aktueller Stand · " + timeShort(new Date()));
         render();
-        toast(neu>0 ? neu+" Einheiten dazugeladen" : "Stand ist bereits aktuell");
+        if(neu>0) toast(neu+" Einheiten dazugeladen");
+        else if(!silent) toast("Stand ist bereits aktuell");
       });
     })
-    .catch(function(e){ ghStatus("Fehlgeschlagen: " + e.message); toast(e.message); });
+    .catch(function(e){ ghStatus("Fehlgeschlagen: " + e.message); if(!silent) toast(e.message); });
 }
 
 /* ============================================================
@@ -1107,14 +1134,24 @@ function stat(n,l){ return "<div class='stat'><span class='statnum'>"+n+"</span>
 
 function ghCardHTML(){
   var offen = S.ghOpen;
+  var titel = SYNC_URL ? "Automatischer Abgleich" : "Abgleich mit GitHub";
   var kopf = "<div class='card'><button class='ghhead' id='ghToggle'>"+
-    "<span class='h3' style='margin:0'>Abgleich mit GitHub</span>"+
-    "<span class='ghstate'>"+(ghReady()?"eingerichtet":"nicht eingerichtet")+"</span>"+
+    "<span class='h3' style='margin:0'>"+titel+"</span>"+
+    "<span class='ghstate'>"+(ghReady()?(SYNC_URL?"aktiv":"eingerichtet"):"nicht eingerichtet")+"</span>"+
     "<span class='chev'>"+(offen?"−":"+")+"</span></button>";
   if(!offen) return kopf+"</div>";
 
+  if(SYNC_URL){
+    return kopf+
+      "<p class='p mut' style='margin-top:10px'>Deine Einheiten werden automatisch über einen sicheren Sync-Server gespeichert und auf allen Geräten abgeglichen — nach jedem Speichern hoch, beim Öffnen und Zurückkehren wieder herunter. Du musst hier <b>nichts</b> eintragen.</p>"+
+      "<div class='row' style='gap:8px;margin-top:10px'>"+
+      "<button class='btn' id='ghUp'>Jetzt hochladen</button>"+
+      "<button class='btn' id='ghDown'>Jetzt herunterladen</button></div>"+
+      "<p class='p mut' id='ghStatus' style='margin:9px 0 0'>Bereit.</p></div>";
+  }
+
   return kopf+
-    "<p class='p mut' style='margin-top:10px'>Legt deinen Verlauf als JSON-Datei in einem Repository ab, damit Handy und Rechner denselben Stand haben. Nimm dafür ein <b>privates</b> Repository — nicht das, aus dem die App geladen wird.</p>"+
+    "<p class='p mut' style='margin-top:10px'>Legt deinen Verlauf als JSON-Datei im Repository ab, damit Handy und Rechner denselben Stand haben. Der Abgleich läuft automatisch: nach jedem Speichern hoch, beim Öffnen und Zurückkehren zur App wieder herunter. Du musst nur einmal pro Gerät das Token eintragen.</p>"+
     "<div class='row'>"+
     "<label class='field'><span>Token</span><input type='password' id='ghToken' value='"+esc(GH.token)+"' placeholder='github_pat_…' autocomplete='off'></label>"+
     "</div><div class='row'>"+
@@ -1124,7 +1161,7 @@ function ghCardHTML(){
     "<label class='field'><span>Dateiname</span><input type='text' id='ghPath' value='"+esc(GH.path)+"' autocomplete='off'></label>"+
     "<label class='field'><span>Branch</span><input type='text' id='ghBranch' value='"+esc(GH.branch)+"' autocomplete='off'></label>"+
     "</div>"+
-    "<label class='ghauto'><input type='checkbox' id='ghAuto'"+(GH.auto?" checked":"")+"> Nach jedem Speichern automatisch hochladen</label>"+
+    "<label class='ghauto'><input type='checkbox' id='ghAuto'"+(GH.auto?" checked":"")+"> Automatisch abgleichen (nach dem Speichern hoch, beim Öffnen herunter)</label>"+
     "<div class='row' style='gap:8px;margin-top:10px'>"+
     "<button class='btn' id='ghSave'>Zugang speichern</button>"+
     "<button class='btn' id='ghUp'>Jetzt hochladen</button>"+
@@ -1340,7 +1377,7 @@ document.addEventListener("click",function(ev){
     GH.token  = feld("ghToken");
     GH.owner  = feld("ghOwner").replace(/^https?:\/\/github\.com\//,"").split("/")[0];
     GH.repo   = feld("ghRepo").split("/").pop();
-    GH.path   = feld("ghPath") || "trainingslog.json";
+    GH.path   = feld("ghPath") || "Training.json";
     GH.branch = feld("ghBranch") || "main";
     var chk = document.getElementById("ghAuto");
     GH.auto   = chk ? chk.checked : true;
@@ -1364,7 +1401,7 @@ document.addEventListener("click",function(ev){
   }
   if(el.id==="ghDown"){
     if(!ghReady()){ toast("Zuerst Zugang speichern"); return; }
-    syncDown(); return;
+    syncDown(false); return;
   }
   if(el.id==="clearBtn"){
     if(confirm("Alle erfassten Einheiten löschen? Das lässt sich nicht rückgängig machen.")){
@@ -1451,6 +1488,7 @@ initStorage()
     }
     render();
     if(draftValid(draft)) toast("Laufende Einheit wiederhergestellt");
+    if(ghReady() && GH.auto) syncDown(true);   /* neueste Daten vom anderen Gerät automatisch holen */
   });
 
 /* Beim Verlassen der Seite sofort sichern, ohne auf den Timer zu warten */
@@ -1460,6 +1498,10 @@ window.addEventListener("pagehide", function(){
 document.addEventListener("visibilitychange", function(){
   if(document.visibilityState==="hidden" && S.draft && !S.saved){
     clearTimeout(_draftTimer); store.set(DRAFTKEY, S.draft);
+  }
+  /* Beim Zurueckkehren zur App automatisch den neuesten Stand holen */
+  if(document.visibilityState==="visible" && ghReady() && GH.auto){
+    syncDown(true);
   }
 });
 </script>
