@@ -25,15 +25,15 @@
    "week": 1,
    "stufe": "A",
    "sets": {
-    "kh_tri": [
+    "kh_rudern": [
      {
-      "kg": "2",
-      "reps": "2",
+      "kg": "7",
+      "reps": "10",
       "rir": ""
      }
     ]
    },
-   "savedAt": 1787158995031
+   "savedAt": 1787159182911
   }
  ]
 }
