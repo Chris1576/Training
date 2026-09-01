@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#0E1110">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Ganzkörper">
-<title>Trainingslog — 3× Ganzkörper</title>
+<meta name="apple-mobile-web-app-title" content="Trainingslog">
+<title>Trainingslog — Pull · Push · Leg</title>
 <style>
 :root{
   color-scheme:dark;
@@ -122,7 +122,7 @@ main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction
 .prev{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;
   margin-top:7px;padding-top:6px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--mut)}
 .prev.none{justify-content:flex-start;font-style:italic;opacity:.75}
-.prevval b{color:var(--ink);font-weight:700}
+.prevval b{color:var(--warn);font-weight:700;font-size:14px}
 .prevlbl{display:inline-block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-right:6px}
 .chips{display:flex;gap:5px;flex-wrap:wrap}
 .chip{border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:10.5px;font-variant-numeric:tabular-nums}
@@ -133,6 +133,7 @@ main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction
 .ex-foot{display:flex;justify-content:space-between;gap:10px;padding:9px 14px 11px;
   border-top:1px solid var(--line2);font-size:11.5px;color:var(--mut);flex-wrap:wrap}
 .ready{color:var(--a1);font-weight:700;border:1px solid var(--a1);padding:1px 8px;border-radius:999px}
+.lastval{color:var(--warn);font-weight:700;font-size:14px}
 
 .savebar{position:sticky;bottom:0;display:flex;align-items:center;gap:12px;background:var(--panel);
   border:1px solid var(--line);padding:10px 14px;border-radius:14px;margin-bottom:env(safe-area-inset-bottom)}
@@ -278,108 +279,111 @@ var META = {
   kh_tri:{incr:1,step:1,label:"KH-Trizepsstrecken"},
   bss:{incr:2,step:1,label:"Bulgarian Split Squat"},
   lunges:{incr:2,step:1,label:"Ausfallschritte rückwärts"},
-  waden:{incr:2.5,step:2.5,label:"Stehendes Wadenheben"}
+  waden:{incr:2.5,step:2.5,label:"Stehendes Wadenheben"},
+  clean_prep:{incr:2.5,step:2.5,label:"Clean Prep"},
+  power_clean:{incr:2.5,step:2.5,label:"Power Clean"},
+  back_squat:{incr:5,step:2.5,label:"Back Squat"},
+  pullup:{incr:2.5,step:1.25,bw:true,label:"Pull up"},
+  bench:{incr:2.5,step:2.5,label:"Bench Press"},
+  landmine_row:{incr:2.5,step:2.5,label:"Landmine Row"},
+  db_zpress:{incr:2,step:1,label:"DB Zpress"},
+  oh_carry:{incr:2,step:1,label:"OH Carry"},
+  hanging_tuck:{incr:0,step:1,bw:true,label:"Hanging Tuck up"},
+  split_squat:{incr:2,step:1,label:"Split squat"},
+  step_up:{incr:2,step:1,label:"Step up"},
+  db_rdl:{incr:2,step:1,label:"DB RDL"},
+  glute_bridge:{incr:2.5,step:2.5,label:"Glute Bridge"},
+  copenhagen:{incr:0,step:1,bw:true,label:"Copenhagen Plank"}
 };
 
 var UNITS = [
- {id:"GK1",n:1,day:"Dienstag",prio:"Zug",accent:"a1",ex:[
-  {id:"klimmzug_o",name:"Klimmzug Obergriff",hint:"ggf. Zusatzgewicht",sets:3,min:5,max:8,rir:"1",pause:"3 Min",prio:true,warm:true},
-  {id:"lh_rudern",name:"LH-Rudern vorgebeugt",hint:"30–45°",sets:3,min:6,max:8,rir:"2",pause:"3 Min",prio:true,warm:true},
-  {id:"kh_bank",name:"KH-Bankdrücken flach",sets:2,min:6,max:8,rir:"1",pause:"2–3 Min",warm:true},
-  {id:"lh_squat",name:"LH-Kniebeuge",sets:2,min:6,max:8,rir:"2",pause:"3–4 Min",warm:true},
-  {id:"lh_rdl",name:"Rumänisches Kreuzheben LH",sets:2,min:8,max:10,rir:"2",pause:"3 Min"},
-  {id:"kh_seit",name:"KH-Seitheben",sets:2,min:10,max:15,rir:"0–1",pause:"2 Min"},
-  {id:"lh_curl",name:"LH-Curl",sets:2,min:8,max:12,rir:"0–1",pause:"2 Min"}]},
- {id:"GK2",n:2,day:"Donnerstag",prio:"Druck",accent:"a2",ex:[
-  {id:"lh_bank",name:"LH-Bankdrücken flach",sets:3,min:5,max:8,rir:"1–2",pause:"3 Min",prio:true,warm:true},
-  {id:"dips",name:"Dips",hint:"vorgelehnt, Brustversion",sets:3,min:6,max:10,rir:"0–1",pause:"2–3 Min",prio:true},
-  {id:"lh_ohp",name:"LH-Überkopfdrücken stehend",sets:2,min:6,max:8,rir:"2",pause:"3 Min",warm:true},
-  {id:"klimmzug_u",name:"Klimmzug Untergriff",sets:2,min:6,max:8,rir:"1",pause:"3 Min"},
-  {id:"kh_rudern",name:"KH-Rudern einarmig",hint:"je Seite",sets:2,min:8,max:10,rir:"1",pause:"2 Min"},
-  {id:"bss",name:"Bulgarian Split Squat KH",hint:"je Seite",sets:2,min:8,max:10,rir:"1–2",pause:"2–3 Min"},
-  {id:"kh_tri",name:"KH-Trizepsstrecken über Kopf",sets:2,min:8,max:12,rir:"0–1",pause:"2 Min"}]},
- {id:"GK3",n:3,day:"Samstag",prio:"Beine",accent:"a3",ex:[
-  {id:"lh_squat",name:"LH-Kniebeuge",sets:3,min:5,max:8,rir:"2",pause:"3–4 Min",prio:true,warm:true},
-  {id:"lh_rdl",name:"Rumänisches Kreuzheben LH",sets:3,min:6,max:8,rir:"2",pause:"3 Min",prio:true,warm:true},
-  {id:"lunges",name:"Ausfallschritte KH rückwärts",hint:"je Seite",sets:2,min:8,max:10,rir:"1",pause:"2–3 Min"},
-  {id:"waden",name:"Stehendes Wadenheben",sets:3,min:8,max:12,rir:"0–1",pause:"2 Min"},
-  {id:"klimmzug_o",name:"Klimmzug Obergriff",sets:2,min:6,max:8,rir:"1",pause:"3 Min"},
-  {id:"kh_schraeg",name:"KH-Schrägbankdrücken",hint:"30°",sets:2,min:6,max:8,rir:"1",pause:"2–3 Min"},
-  {id:"kh_seit",name:"KH-Seitheben",sets:2,min:10,max:15,rir:"0–1",pause:"2 Min"}]}
+ {id:"GK1",n:1,day:"Dienstag",prio:"Pull",accent:"a1",ex:[
+  {id:"clean_prep",name:"Clean Prep",scheme:"3× 5+5+5",sets:3,min:5,max:5,rir:"2",pause:"2 Min",prio:true},
+  {id:"power_clean",name:"Power Clean",scheme:"5×3",sets:5,min:3,max:3,rir:"2",pause:"3 Min",prio:true,warm:true},
+  {id:"back_squat",name:"Back Squat",scheme:"3×5",sets:3,min:5,max:5,rir:"2",pause:"3–4 Min",prio:true,warm:true},
+  {id:"pullup",name:"Pull up",scheme:"3×Max",sets:3,rir:"0",pause:"3 Min"}]},
+ {id:"GK2",n:2,day:"Donnerstag",prio:"Push",accent:"a2",ex:[
+  {id:"bench",name:"Bench Press",scheme:"3×6–8",sets:3,min:6,max:8,rir:"1–2",pause:"3 Min",prio:true,warm:true},
+  {id:"landmine_row",name:"Landmine Row",scheme:"3×6–8",sets:3,min:6,max:8,rir:"1–2",pause:"2–3 Min",prio:true},
+  {id:"db_zpress",name:"DB Zpress",scheme:"3×6–8",sets:3,min:6,max:8,rir:"2",pause:"2–3 Min",warm:true},
+  {id:"oh_carry",name:"OH Carry",scheme:"3×20 m",sets:3,min:20,max:20,rir:"1",pause:"2 Min",repLabel:"m"},
+  {id:"hanging_tuck",name:"Hanging Tuck up",scheme:"3×10",sets:3,min:10,max:10,rir:"0–1",pause:"2 Min"}]},
+ {id:"GK3",n:3,day:"Samstag",prio:"Leg",accent:"a3",ex:[
+  {id:"split_squat",name:"Split squat",hint:"/side",scheme:"3×6–8/side",sets:3,min:6,max:8,rir:"1–2",pause:"2–3 Min",prio:true,warm:true},
+  {id:"step_up",name:"Step up",hint:"/side",scheme:"3×6–8/side",sets:3,min:6,max:8,rir:"1–2",pause:"2–3 Min"},
+  {id:"db_rdl",name:"DB RDL",scheme:"3×8–12",sets:3,min:8,max:12,rir:"2",pause:"3 Min",prio:true,warm:true},
+  {id:"glute_bridge",name:"Glute Bridge",scheme:"3×6–8",sets:3,min:6,max:8,rir:"1",pause:"2 Min"},
+  {id:"copenhagen",name:"Copenhagen Plank",hint:"/side",scheme:"3×30 s",sets:3,min:30,max:30,rir:"0–1",pause:"1–2 Min",repLabel:"s"}]}
 ];
 
 var EXEC = {
- lh_squat:{aufbau:"Stange auf dem oberen Trapez, Hände so eng wie die Schulter es zulässt. Füße schulterbreit, Zehen 15–30° nach außen. Vor dem Ausheben tief einatmen und den Bauch nach außen spannen.",
+ clean_prep:{aufbau:"Leere Stange oder leichtes Gewicht. Drei Teile am Stück: Clean Pull, Hang Power Clean, Front Squat — je 5 Wiederholungen, ohne die Stange abzusetzen.",
+  bewegung:"Pull: Hüfte und Knie strecken, Stange eng am Körper, Schultern hoch. Hang Clean: aus der Tasche explosiv umsetzen. Front Squat: Ellenbogen hoch, Fersen fest, tiefe Kniebeuge.",
+  fehler:"Die drei Teile auseinanderreißen oder zwischen den Fünfern absetzen. Es ist ein Komplex — Tempo gleichmäßig, Technik vor Gewicht.",
+  abbruch:"Stange kontrolliert vor dem Körper absetzen."},
+ power_clean:{aufbau:"Hüftbreit, Stange über dem Mittelfuß, Griff knapp außerhalb der Knie. Rücken gerade, Schultern vor der Stange, Arme lang und locker.",
+  bewegung:"Erste Zugphase kontrolliert bis übers Knie, dann explosiv strecken — Hüfte, Knie, Fußgelenk. Ellenbogen schnell nach vorn, Stange auf den vorderen Schultern fangen, Oberschenkel höchstens parallel.",
+  fehler:"Die Stange vom Boden reißen oder mit den Armen ziehen. Der Impuls kommt aus der Hüfte, die Arme führen nur.",
+  abbruch:"Stange vor dem Körper fallen lassen, hinter die Füße treten. Nie nach hinten abwerfen."},
+ back_squat:{aufbau:"Stange auf dem oberen Trapez, Hände so eng wie die Schulter es zulässt. Füße schulterbreit, Zehen 15–30° nach außen. Vor dem Ausheben tief einatmen und den Bauch nach außen spannen.",
   bewegung:"Hüfte und Knie gleichzeitig beugen, Knie folgen der Fußrichtung. Runter in 2–3 s bis mindestens Oberschenkel waagerecht, hoch explosiv. Die Luft bleibt bis zum Durchqueren der schwersten Stelle im Bauch.",
-  fehler:"Hüfte schießt schneller hoch als die Brust — dann ist das Gewicht zu hoch. Zurück auf die Untergrenze der Spanne.",
-  abbruch:"Nur im Rack mit Ablagebügeln auf Höhe der tiefsten Position. Stange kontrolliert absetzen, nie nach hinten abwerfen. Ohne Ablagen wird die Kniebeuge durch Split Squats ersetzt."},
- lh_rdl:{aufbau:"Stange am Körper, Griff schulterbreit, Knie leicht gebeugt und ab jetzt fixiert. Schulterblätter nach hinten unten, Brust hoch.",
-  bewegung:"Hüfte nach hinten schieben, Stange schleift an Oberschenkel und Schienbein entlang. Runter, bis die Hamstrings maximal ziehen — meist Mitte Schienbein, nicht bis zum Boden. Hoch durch Hüftstreckung, nicht durch Zurücklehnen.",
-  fehler:"Runder unterer Rücken in der Endposition. Sobald die Wirbelsäule nachgibt, ist der Satz vorbei — auch bei RIR 4.",
-  abbruch:"Stange lässt sich jederzeit am Boden ablegen. Deshalb ist ein Satz bis zum Versagen hier nie nötig."},
- lh_bank:{aufbau:"Augen unter der Stange, Füße fest am Boden, Schulterblätter zusammen und nach unten gezogen. Leichtes Hohlkreuz ist erwünscht, das Gesäß bleibt auf der Bank.",
+  fehler:"Hüfte schießt schneller hoch als die Brust — dann ist das Gewicht zu hoch.",
+  abbruch:"Nur im Rack mit Ablagebügeln auf Höhe der tiefsten Position. Stange kontrolliert absetzen, nie nach hinten abwerfen."},
+ pullup:{aufbau:"Obergriff etwas weiter als schulterbreit. Aus dem vollen Hang starten, Schulterblätter zuerst nach unten ziehen, dann erst die Arme beugen.",
+  bewegung:"Brust zur Stange, Blick geradeaus, Beine ruhig. Ablassen in 2–3 s bis fast in die volle Streckung. Jeder Satz bis zum technischen Maximum — die letzte saubere Wiederholung zählt, keine halben.",
+  fehler:"Schwung aus der Hüfte. Unsaubere Wiederholungen zählen nicht.",
+  abbruch:"Loslassen und landen."},
+ bench:{aufbau:"Augen unter der Stange, Füße fest am Boden, Schulterblätter zusammen und nach unten gezogen. Leichtes Hohlkreuz ist erwünscht, das Gesäß bleibt auf der Bank.",
   bewegung:"Stange in 2–3 s zum unteren Brustbein, Ellenbogen etwa 45–60° zum Rumpf. Kurz Kontakt ohne aufzuprallen, dann explosiv hoch. Schulterblätter bleiben fixiert.",
   fehler:"Ellenbogen rechtwinklig abgespreizt — belastet die Schulterkapsel und kostet Kraft.",
-  abbruch:"Nur mit Sicherheitsablagen. Ohne Ablagen keine Verschlüsse an der Stange, damit sie sich im Notfall entladen lässt — besser: Kurzhanteln statt Langhantel."},
- lh_ohp:{aufbau:"Stange auf den vorderen Schultern, Griff knapp außerhalb der Schulterbreite, Ellenbogen leicht vor der Stange. Gesäß und Bauch fest, Rippen unten.",
-  bewegung:"Kopf minimal zurück, Stange senkrecht am Gesicht vorbei nach oben, oben den Kopf wieder durchschieben. Absenken kontrolliert bis auf die Schultern.",
-  fehler:"Ausweichen ins Hohlkreuz, sobald es schwer wird. Das ist das Abbruchsignal, keine gültige Wiederholung.",
-  abbruch:"Vor der Stange wegtreten und sie kontrolliert vor dem Körper absetzen."},
- lh_rudern:{aufbau:"Hüfte gebeugt, Oberkörper 30–45° zur Waagerechten, Rücken gerade, Knie leicht gebeugt. Griff etwa schulterbreit im Obergriff.",
-  bewegung:"Stange zum Bauchnabel ziehen, Ellenbogen eng am Körper, Schulterblätter am Ende zusammen. Ablassen in 2–3 s bis zur vollen Streckung des Lats.",
-  fehler:"Der Oberkörper richtet sich mit jeder Wiederholung weiter auf. Der Winkel wird vom ersten bis zum letzten Satz gehalten — sonst sind die Gewichte über acht Wochen nicht vergleichbar."},
- klimmzug_o:{aufbau:"Obergriff etwas weiter als schulterbreit. Aus dem vollen Hang starten, Schulterblätter zuerst nach unten ziehen, dann erst die Arme beugen.",
-  bewegung:"Brust zur Stange, Blick geradeaus, Beine ruhig. Ablassen in 2–3 s bis fast in die volle Streckung.",
-  fehler:"Schwung aus der Hüfte. Unter 6 sauberen Wiederholungen wird mit Fußkontakt unterstützt oder es werden Negative trainiert.",
+  abbruch:"Nur mit Sicherheitsablagen. Ohne Ablagen keine Verschlüsse an der Stange, damit sie sich im Notfall entladen lässt."},
+ landmine_row:{aufbau:"Ein Stangenende in der Landmine oder in einer Ecke. Parallel zur Stange stehen, Hüfte gebeugt, Rücken gerade, Griff am Kragen oder mit Handle.",
+  bewegung:"Stange zur Hüfte ziehen, Ellenbogen eng, Schulterblatt am Ende zusammen. Ablassen in 2–3 s bis zur vollen Streckung.",
+  fehler:"Der Oberkörper richtet sich mit jeder Wiederholung weiter auf. Der Winkel bleibt vom ersten bis zum letzten Satz gleich.",
+  abbruch:"Stange auf den Boden ablassen."},
+ db_zpress:{aufbau:"Auf dem Boden sitzen, Beine gestreckt nach vorn, Aufrichtung aus dem Rumpf. Kurzhanteln auf Schulterhöhe, Rippen unten, Bauch fest.",
+  bewegung:"Hanteln senkrecht nach oben drücken, oben kurz halten, kontrolliert auf die Schultern zurück. Kein Hohlkreuz, kein Abstützen der Beine.",
+  fehler:"Ausweichen ins Hohlkreuz oder die Beine anwinkeln, sobald es schwer wird. Das ist das Abbruchsignal.",
+  abbruch:"Hanteln seitlich auf den Boden legen."},
+ oh_carry:{aufbau:"Eine oder zwei Hanteln / Kettlebells gestreckt über dem Kopf, Schulterblatt aktiv, Rippen unten, Blick geradeaus.",
+  bewegung:"20 m ruhig gehen, kurze Schritte, Arme bleiben gestreckt. Umdrehen ohne das Gewicht abzusetzen, wenn der Weg kürzer ist.",
+  fehler:"Der Arm knickt ein oder der Rumpf seitlich wegkippt. Dann absetzen und den Satz beenden.",
+  abbruch:"Gewicht kontrolliert auf Schulterhöhe bringen und absetzen."},
+ hanging_tuck:{aufbau:"Im Hang an der Stange, Schultern aktiv, Beine lang. Griff so weit, dass die Schultern frei bleiben.",
+  bewegung:"Knie zur Brust ziehen, Becken leicht hinterkippen, unten wieder lang werden. Kein Schwung aus dem Körper.",
+  fehler:"Kippen aus dem Schwung statt aus der Bauchspannung. Zählt nicht als Wiederholung.",
   abbruch:"Loslassen und landen."},
- klimmzug_u:{aufbau:"Untergriff schulterbreit, voller Hang, Schulterblätter zuerst nach unten ziehen.",
-  bewegung:"Brust zur Stange, Ellenbogen nah am Rumpf. Ablassen in 2–3 s bis fast in die volle Streckung.",
-  fehler:"Schwung aus der Hüfte oder verkürzter Bewegungsumfang am oberen Ende.",
-  abbruch:"Loslassen und landen."},
- dips:{aufbau:"Barrenbreite knapp über Schulterbreite. Oberkörper bewusst nach vorn geneigt, Beine leicht nach hinten, Schultern aktiv nach unten gedrückt.",
-  bewegung:"Absenken in 2–3 s, bis die Oberarme etwa waagerecht sind — nicht tiefer, wenn es in der Schultervorderseite zieht. Hoch, ohne die Vorneigung aufzugeben.",
-  fehler:"Aufrechter Oberkörper macht daraus eine Trizepsübung und nimmt der Brust den Reiz.",
-  abbruch:"Füße aufsetzen. Genau deshalb ist hier RIR 0–1 erlaubt."},
- kh_bank:{aufbau:"Schulterblätter zusammengezogen, Füße fest am Boden, Hanteln über der unteren Brust.",
-  bewegung:"Absenken in 2–3 s, bis die Oberarme etwa auf Bankhöhe sind. Handrücken zeigen nach hinten.",
-  fehler:"Hanteln oben zusammenklappen — der Zug auf die Brust verschwindet.",
-  abbruch:"Hanteln seitlich neben dem Körper ablegen."},
- kh_schraeg:{aufbau:"Bank auf 30°, konstant über alle acht Wochen. Schulterblätter fixiert.",
-  bewegung:"Wie beim flachen Drücken, Bahn etwas höher zur Schlüsselbeinlinie.",
-  fehler:"Wechselnder Bankwinkel je nach freier Bank — macht die Gewichte unvergleichbar."},
- kh_rudern:{aufbau:"Knie und gleichseitige Hand auf der Bank, Rücken waagerecht, Hantel hängt frei.",
-  bewegung:"Hantel zur Hüfte ziehen, nicht zur Schulter. Unten voll ausstrecken lassen.",
-  fehler:"Rotation des Oberkörpers als Schwungholen."},
- bss:{aufbau:"Hinteres Bein auf der Bank, vorderer Fuß weit genug vorn, dass das Knie über dem Mittelfuß bleibt. Kurzhanteln seitlich.",
-  bewegung:"Kontrolliert absenken, leichte Vorneigung belastet das Gesäß stärker. Alle Wiederholungen einer Seite am Stück.",
-  fehler:"Zu kurzer Stand — das vordere Knie schiebt weit über die Zehen.",
-  abbruch:"Kurzhanteln seitlich fallen lassen, Stand mit dem hinteren Bein auffangen."},
- lunges:{aufbau:"Aufrechter Stand, Kurzhanteln seitlich, Blick geradeaus.",
-  bewegung:"Schritt nach hinten, hinteres Knie sanft absenken, Gewicht bleibt auf dem vorderen Fuß. Alle Wiederholungen einer Seite am Stück.",
-  fehler:"Aufsetzen des hinteren Knies mit Schwung."},
- waden:{aufbau:"Vorfuß auf einer Erhöhung, Körper aufrecht, Gewicht auf Schulter oder in den Händen.",
-  bewegung:"Volle Dehnung unten mit kurzer Pause, oben eine Sekunde halten. Tempo bewusst langsam.",
-  fehler:"Wippen aus dem Sprunggelenk ohne Bewegungsumfang."},
- kh_seit:{aufbau:"Leichte Vorneigung, Ellenbogen minimal gebeugt und führend.",
-  bewegung:"Hanteln bis Schulterhöhe führen, Ablassen in 2–3 s.",
-  fehler:"Schwung aus dem Rumpf, sobald das Gewicht zu schwer wird."},
- lh_curl:{aufbau:"Aufrechter Stand, Ellenbogen am Rumpf, Griff schulterbreit.",
-  bewegung:"Bewegung nur im Ellenbogengelenk, unten vollständig strecken.",
-  fehler:"Ausholen mit dem Oberkörper — zählt nicht als Wiederholung."},
- kh_tri:{aufbau:"Oberarme senkrecht und fixiert, Hantel beidhändig über dem Kopf.",
-  bewegung:"Hantel hinter den Kopf absenken bis zur Dehnung, oben nicht ganz durchdrücken.",
-  fehler:"Ellenbogen wandern nach außen und vorn."}
+ split_squat:{aufbau:"Langer Ausfallschritt, hintere Ferse gehoben, vorderes Knie über dem Mittelfuß. Kurzhanteln seitlich oder Langhantel auf dem Rücken.",
+  bewegung:"Hinteres Knie kontrolliert Richtung Boden, vordere Ferse fest. Alle Wiederholungen einer Seite am Stück, dann wechseln.",
+  fehler:"Zu kurzer Stand — das vordere Knie schiebt weit über die Zehen, der hintere Fuß trägt mit.",
+  abbruch:"Gewichte seitlich absetzen, Stand mit dem hinteren Bein auffangen."},
+ step_up:{aufbau:"Kasten auf Kniehöhe, ganzer vorderer Fuß oben. Gewicht in den Händen oder auf dem Rücken. Aufrichtung aus dem Standbein.",
+  bewegung:"Durch die Ferse hochdrücken, oben Hüfte strecken, kontrolliert dieselbe Seite zurück. Kein Abstoßen mit dem hinteren Bein. Alle Wiederholungen einer Seite am Stück.",
+  fehler:"Das hintere Bein macht die Arbeit. Dann ist der Kasten zu hoch oder das Gewicht zu schwer.",
+  abbruch:"Hanteln auf den Kasten oder seitlich absetzen."},
+ db_rdl:{aufbau:"Kurzhanteln vor den Oberschenkeln, Griff neutral, Knie leicht gebeugt und ab jetzt fixiert. Schulterblätter nach hinten unten, Brust hoch.",
+  bewegung:"Hüfte nach hinten schieben, Hanteln schleifen an Oberschenkel und Schienbein entlang. Runter, bis die Hamstrings maximal ziehen. Hoch durch Hüftstreckung, nicht durch Zurücklehnen.",
+  fehler:"Runder unterer Rücken in der Endposition. Sobald die Wirbelsäule nachgibt, ist der Satz vorbei.",
+  abbruch:"Hanteln lassen sich jederzeit am Boden ablegen."},
+ glute_bridge:{aufbau:"Rückenlage, Füße hüftbreit, Fersen unter den Knien, Rippen unten. Gewicht auf dem Becken, falls beladen.",
+  bewegung:"Becken hochdrücken, oben Gesäß fest, 1 s halten, kontrolliert absenken. Knie bleiben über den Füßen, kein Hohlkreuz.",
+  fehler:"Überstrecken der Lendenwirbelsäule statt Hüftstreckung. Die Bewegung endet, wenn das Gesäß die Arbeit macht.",
+  abbruch:"Gewicht seitlich abrollen."},
+ copenhagen:{aufbau:"Seitlage, oberes Bein auf Bank oder Kasten auf Knie- oder Schienbeinhöhe. Unterer Unterarm stützt, Körper in einer Linie. Unteres Bein frei oder leicht aufgelegt.",
+  bewegung:"Hüfte anheben, 30 s halten, Körper gerade. Seite wechseln. Qualität vor Dauer — eher kürzer und sauber als länger und verdreht.",
+  fehler:"Die Hüfte sackt ab oder der Rumpf rotiert nach vorn. Dann den Halt beenden.",
+  abbruch:"Hüfte absetzen, seitlich ablegen."}
 };
 
 var UNIT_INTRO = {
- GK1:"Der Zugtag. Klimmzug und Rudern bekommen je drei Sätze und die volle Frische — alles danach ist Ergänzung. Wenn du am Ende merkst, dass du bei den ersten beiden Übungen Kraft gespart hast, war die Reihenfolge nur auf dem Papier eingehalten.",
- GK2:"Der Drucktag. Bankdrücken und Dips zuerst. Prüfe vor dem ersten schweren Satz die Sicherheitsablagen — das ist die Übung des Tages mit dem höchsten Risiko ohne Spotter.",
- GK3:"Der Beintag. Kniebeuge und Kreuzheben liegen vorn und brauchen die längsten Pausen. Das Wadenheben steht bewusst auf Position 4 und nicht am Ende: es hat mit drei Sätzen ohnehin das kleinste Volumen und darf nicht als Erstes dem Zeitdruck zum Opfer fallen."
+ GK1:"Day 1 Pull. Clean Prep öffnet die Hüfte und die Fangposition, danach Power Clean und Back Squat mit voller Frische. Pull-ups am Ende — jeder Satz bis zum technischen Maximum.",
+ GK2:"Day 2 Push. Bench Press zuerst, dann Landmine Row als Gegenzug. Z-Press und Overhead Carry verlangen einen ruhigen Rumpf — Hanging Tuck-ups schließen ab.",
+ GK3:"Day 3 Leg. Split Squat und Step-up je Seite durchziehen, bevor DB RDL die hintere Kette belädt. Glute Bridge und Copenhagen Plank sind der Abschluss, nicht optional."
 };
 
 var WARMUP_GENERAL = ["2 Min zügiges Gehen / Air Squats / Hampelmänner","10× Hüftbeugen ohne Gewicht",
- "10× tiefe Kniebeugen ohne Gewicht","10× Scapula Push-ups","5–8× Scapula Pull-ups an der Stange",
- "je 5× Arm- und Hüftkreise pro Richtung"];
+ "10× tiefe Kniebeugen ohne Gewicht","5× Clean-Pulls mit leerer Stange","10× Scapula Push-ups",
+ "5–8× Scapula Pull-ups an der Stange","je 5× Arm- und Hüftkreise pro Richtung"];
 
 var PAUSE_INHALT = ["Sofort Gewicht, Wiederholungen und RIR eintragen","Erste Minute stehen oder gehen, nicht hinsetzen",
  "Zweite Minute: Nase ein, doppelt so lang aus","Letzte 20 s: Griff, Fußstellung und Scheiben prüfen"];
@@ -470,7 +474,7 @@ var GHKEY = "gk3:gh";
    auf keinem Geraet muss ein Token eingegeben werden.
    Bleibt sie leer, benutzt die App den direkten GitHub-Weg (mit Token).
    ================================================================= */
-var SYNC_URL = "";
+var SYNC_URL = "/api/data";
 var GH = { token:"", owner:"Chris1576", repo:"Training", path:"Training.json", branch:"main", auto:true };
 var GH_SHA = null;
 
@@ -539,13 +543,21 @@ function ghPut(obj){
     });
 }
 
-/* Einheiten zusammenfuehren: gleicher Tag + gleiche Einheit = derselbe Eintrag,
-   es gewinnt der zuletzt gespeicherte. */
+/* Einheiten zusammenfuehren: gleicher Tag + gleiche Einheit = derselbe Eintrag.
+   Pro Uebung wird zusammengefuehrt — es gewinnt der zuletzt gespeicherte
+   Eintrag je Uebung, andere Uebungen bleiben erhalten. */
 function mergeSessions(a,b){
   var map={};
   (a||[]).concat(b||[]).forEach(function(s){
     var k = s.date+"|"+s.unit, alt = map[k];
-    if(!alt || (s.savedAt||0) >= (alt.savedAt||0)) map[k]=s;
+    if(!alt){ map[k]=s; return; }
+    var newer = (s.savedAt||0) >= (alt.savedAt||0) ? s : alt;
+    var older = newer===s ? alt : s;
+    var sets={};
+    Object.keys(older.sets||{}).forEach(function(ex){ sets[ex]=older.sets[ex]; });
+    Object.keys(newer.sets||{}).forEach(function(ex){ sets[ex]=newer.sets[ex]; });
+    map[k]={ id:newer.id, date:newer.date, unit:newer.unit, week:newer.week,
+             stufe:newer.stufe, sets:sets, savedAt:Math.max(s.savedAt||0, alt.savedAt||0) };
   });
   return Object.keys(map).map(function(k){ return map[k]; })
     .sort(function(x,y){ return x.date<y.date?-1:1; });
@@ -615,6 +627,29 @@ function today(){ var d=new Date(); return new Date(d.getTime()-d.getTimezoneOff
 function roundTo(v,s){ return Math.round(v/s)*s; }
 function fmt(n){ if(n===""||n===null||n===undefined||isNaN(n)) return "–";
   return String(Math.round(n*100)/100).replace(".",","); }
+function schemeText(ex){
+  if(ex.scheme) return ex.scheme;
+  if(ex.min!=null && ex.max!=null){
+    if(ex.min===ex.max) return ex.sets+" × "+ex.min;
+    return ex.sets+" × "+ex.min+"–"+ex.max;
+  }
+  return ex.sets+" Sätze";
+}
+function setUnit(ex){ return (ex && ex.repLabel) || "Wdh"; }
+function exById(id){
+  for(var i=0;i<UNITS.length;i++){
+    for(var j=0;j<UNITS[i].ex.length;j++){
+      if(UNITS[i].ex[j].id===id) return UNITS[i].ex[j];
+    }
+  }
+  return null;
+}
+/* Einheitliche Darstellung der letzten Trainingsdaten: "10 kg × 10 Wdh" */
+function lastSetText(x, ex){
+  var s = fmt(Number(x.kg))+" kg × "+esc(x.reps)+" "+setUnit(ex);
+  if(x.rir!=="" && x.rir!==undefined && x.rir!==null) s += " @ RIR "+esc(x.rir);
+  return s;
+}
 function dateShort(d){ var p=d.split("-"); return p[2]+"."+p[1]+"."; }
 function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function weekOf(start,date){ if(!start) return 1;
@@ -633,7 +668,7 @@ function pauseMin(p){ var n=(p.match(/\d+/g)||[]).map(Number); if(!n.length) ret
   return n.reduce(function(a,b){return a+b;},0)/n.length; }
 var T_SET=0.8, T_WARMSETS=2, T_WECHSEL=1.5, T_ANKOMMEN=2, T_AUFWAERMEN=5, T_COOLDOWN=10;
 function exerciseMinutes(ex){
-  var meta=META[ex.id]||{}, beid = ex.hint && ex.hint.indexOf("je Seite")>=0;
+  var meta=META[ex.id]||{}, beid = ex.hint && (ex.hint.indexOf("je Seite")>=0 || ex.hint.indexOf("/side")>=0);
   var arbeit = ex.sets*T_SET*(beid?2:1);
   var pausen = Math.max(0,ex.sets-1)*pauseMin(ex.pause);
   var warm = (ex.warm && !meta.bw) ? T_WARMSETS : 0;
@@ -645,6 +680,7 @@ function clock(min){ var h=Math.floor(min), s=Math.round((min-h)*60);
   return h+":"+String(s).padStart(2,"0"); }
 
 function progressionReady(sets,ex){
+  if(ex.max==null) return false;
   var done=(sets||[]).filter(function(s){ return s.reps!=="" && s.kg!==""; });
   if(done.length<ex.sets) return false;
   var allTop=done.every(function(s){ return Number(s.reps)>=ex.max; });
@@ -669,7 +705,7 @@ var S = {
   openStep:"start",
   ablaufUnit:suggestedUnit(),
   openPlan:"GK1",
-  verlaufEx:"lh_squat",
+  verlaufEx:"back_squat",
   showCsv:false,
   saved:false,
   autosavedAt:null,
@@ -752,7 +788,7 @@ function headHTML(){
     return "<button class='tab"+(S.tab===t[0]?" on":"")+"' data-tab='"+t[0]+"'>"+t[1]+"</button>";
   }).join("");
   return "<header class='head'><div class='head-top'><div>"+
-    "<div class='kicker'>3× Ganzkörper · freie Gewichte</div>"+
+    "<div class='kicker'>Pull · Push · Leg</div>"+
     "<h1 class='title'>Trainingslog</h1></div>"+
     "<div class='weekbox'><span class='weeklbl'>Woche</span>"+
     "<span class='weeknum'>"+w+"</span>"+
@@ -779,15 +815,15 @@ function bodyHTML(){
 function unitPick(sel,action){
   return "<div class='unitpick'>"+UNITS.map(function(u){
     return "<button class='unitbtn "+u.accent+(sel===u.id?" on":"")+"' data-"+action+"='"+u.id+"'>"+
-      "<span class='un'>GK "+u.n+"</span><span class='up'>"+u.prio+"</span><span class='ud'>"+u.day+"</span></button>";
+      "<span class='un'>Day "+u.n+"</span><span class='up'>"+u.prio+"</span><span class='ud'>"+u.day+"</span></button>";
   }).join("")+"</div>";
 }
 
-function prevHTML(prev,prevDate,cur){
+function prevHTML(prev,prevDate,cur,ex){
   if(!prev) return "<div class='prev none'>Kein Vergleichswert — dieser Satz ist neu</div>";
   var pKg=Number(prev.kg), pReps=Number(prev.reps);
   var cKg = cur.kg===""?null:Number(cur.kg), cReps = cur.reps===""?null:Number(cur.reps);
-  var chips="";
+  var unit=setUnit(ex), chips="";
   if(cKg!==null && !isNaN(pKg)){
     var d=Math.round((cKg-pKg)*100)/100;
     chips += "<span class='chip "+(d>0?"up":d<0?"down":"same")+"'>"+
@@ -796,12 +832,11 @@ function prevHTML(prev,prevDate,cur){
   if(cReps!==null && !isNaN(pReps)){
     var r=cReps-pReps;
     chips += "<span class='chip "+(r>0?"up":r<0?"down":"same")+"'>"+
-      (r===0?"Wdh gleich":(r>0?"+":"−")+Math.abs(r)+" Wdh")+"</span>";
+      (r===0?unit+" gleich":(r>0?"+":"−")+Math.abs(r)+" "+unit)+"</span>";
   }
   return "<div class='prev'><span class='prevval'>"+
     "<span class='prevlbl'>"+(prevDate?dateShort(prevDate):"zuletzt")+"</span>"+
-    "<b class='mono'>"+fmt(pKg)+" kg × "+esc(prev.reps)+"</b>"+
-    (prev.rir!==""&&prev.rir!==undefined?"<span class='mono'> @ RIR "+esc(prev.rir)+"</span>":"")+
+    "<b class='mono'>"+lastSetText(prev,ex)+"</b>"+
     "</span><span class='chips'>"+chips+"</span></div>";
 }
 
@@ -836,17 +871,17 @@ function trainingHTML(){
         : "50 % × 5 → 78 % × 3, sobald ein Arbeitsgewicht steht")+"</div>";
     }
     var rows = sets.map(function(s,i){
-      var hit = s.reps!=="" && Number(s.reps)>=ex.max;
-      var und = s.reps!=="" && Number(s.reps)<ex.min;
+      var hit = ex.max!=null && s.reps!=="" && Number(s.reps)>=ex.max;
+      var und = ex.min!=null && s.reps!=="" && Number(s.reps)<ex.min;
       return "<div class='set"+(hit?" hit":"")+(und?" under":"")+"' data-row='"+ex.id+"|"+i+"'>"+
         "<span class='set-n'>"+(i+1)+"</span>"+
         numField("kg",s.kg,meta.step||2.5,ex.id,i,"kg")+
-        numField("Wdh",s.reps,1,ex.id,i,"reps")+
+        numField(setUnit(ex),s.reps,1,ex.id,i,"reps")+
         "<div class='rir'><span class='lbl'>RIR</span><div class='rirpick'>"+
         [0,1,2,3].map(function(r){ return "<button class='rirbtn"+(String(s.rir)===String(r)?" on":"")+
           "' data-rir='"+ex.id+"|"+i+"|"+r+"'>"+r+"</button>"; }).join("")+
         "</div></div>"+
-        prevHTML(lp&&lp.sets[i], lp&&lp.date, s)+
+        prevHTML(lp&&lp.sets[i], lp&&lp.date, s, ex)+
         "</div>";
     }).join("");
     var ready = !kal && progressionReady(sets,ex);
@@ -854,11 +889,11 @@ function trainingHTML(){
       "<div class='ex-head'><span class='ex-idx'>"+(idx+1)+"</span>"+
       "<div class='ex-name'>"+esc(ex.name)+(ex.hint?" <i>"+esc(ex.hint)+"</i>":"")+"</div>"+
       (ex.prio?"<span class='prio'>Priorität</span>":"")+"</div>"+
-      "<div class='ex-target'><span><b>"+ex.sets+"</b> × "+ex.min+"–"+ex.max+" Wdh</span>"+
+      "<div class='ex-target'><span><b>"+esc(schemeText(ex))+"</b></span>"+
       "<span>RIR <b>"+(kal?"3":ex.rir)+"</b></span><span>Pause "+ex.pause+"</span></div>"+
       warm+"<div class='sets'>"+rows+"</div>"+
       "<div class='ex-foot'><span class='last'>"+
-      (lp ? "Zuletzt "+dateShort(lp.date)+" — "+lp.sets.map(function(x){ return fmt(Number(x.kg))+"×"+x.reps; }).join(" · ")
+      (lp ? "Zuletzt "+dateShort(lp.date)+" — "+lp.sets.map(function(x){ return lastSetText(x,ex); }).join(" · ")
           : "Noch kein Eintrag — Startgewicht in Woche 1 finden")+
       "</span><span class='readyslot'>"+
       (ready&&meta.incr?"<span class='ready'>Nächstes Mal +"+fmt(meta.incr)+" kg"+(meta.bw?" Zusatz":"")+"</span>":"")+
@@ -910,11 +945,11 @@ function patchTraining(){
     sets.forEach(function(s,i){
       var row=document.querySelector("[data-row='"+ex.id+"|"+i+"']");
       if(!row) return;
-      var hit = s.reps!=="" && Number(s.reps)>=ex.max;
-      var und = s.reps!=="" && Number(s.reps)<ex.min;
+      var hit = ex.max!=null && s.reps!=="" && Number(s.reps)>=ex.max;
+      var und = ex.min!=null && s.reps!=="" && Number(s.reps)<ex.min;
       row.classList.toggle("hit",hit); row.classList.toggle("under",und);
       var pv=row.querySelector(".prev");
-      if(pv) pv.outerHTML = prevHTML(lp&&lp.sets[i], lp&&lp.date, s);
+      if(pv) pv.outerHTML = prevHTML(lp&&lp.sets[i], lp&&lp.date, s, ex);
     });
     var card=document.querySelector("[data-card='"+ex.id+"']");
     if(card){
@@ -971,7 +1006,7 @@ function ablaufSteps(u){
 function execDetailHTML(ex){
   var e=EXEC[ex.id]||{}, meta=META[ex.id]||{}, h="";
   h += "<div class='execspec'>"+
-    "<div><span class='lbl'>Sätze × Wdh</span><b class='mono'>"+ex.sets+" × "+ex.min+"–"+ex.max+"</b></div>"+
+    "<div><span class='lbl'>Vorgabe</span><b class='mono'>"+esc(schemeText(ex))+"</b></div>"+
     "<div><span class='lbl'>RIR</span><b class='mono'>"+ex.rir+"</b></div>"+
     "<div><span class='lbl'>Pause</span><b class='mono'>"+ex.pause+"</b></div>"+
     "<div><span class='lbl'>Tempo</span><b class='mono'>2–3 s ab</b></div></div>";
@@ -998,7 +1033,7 @@ function ablaufHTML(){
     "<span><b>"+Math.round(netto)+"</b> Min Training</span>"+
     "<span><b>+"+T_COOLDOWN+"</b> Min Cooldown</span>"+
     "<span>Priorität <b>"+u.prio+"</b></span></div>"+
-    "<p class='timenote'>Die Zeit gilt bei eingehaltenen Pausen. Wird es enger als 60 Minuten, koppelst du Übung 6 und 7 antagonistisch mit je 2 Min Wechselpause — Sätze streichen und Pausen kürzen ist keine Option.</p></div>";
+    "<p class='timenote'>Die Zeit gilt bei eingehaltenen Pausen. Sätze streichen und Pausen kürzen ist keine Option.</p></div>";
 
   var items = steps.map(function(s){
     var open = S.openStep===s.id;
@@ -1016,7 +1051,7 @@ function ablaufHTML(){
       "<span class='tl-time'>"+clock(s.start)+"<i>+"+Math.round(s.dur)+"</i></span>"+
       "<span class='tl-title'>"+(s.kind==="ex"?"<span class='tl-idx'>"+s.index+"</span>":"")+esc(s.title)+
       (s.kind==="ex"&&s.ex.hint?" <i>"+esc(s.ex.hint)+"</i>":"")+"</span>"+
-      (s.kind==="ex"?"<span class='tl-spec mono'>"+s.ex.sets+" × "+s.ex.min+"–"+s.ex.max+"</span>":"")+
+      (s.kind==="ex"?"<span class='tl-spec mono'>"+esc(schemeText(s.ex))+"</span>":"")+
       "<span class='chev'>"+(open?"−":"+")+"</span></button>"+body+"</li>";
   }).join("");
 
@@ -1091,14 +1126,16 @@ function verlaufHTML(){
     stat(dateShort(lastS.date),"letzte Einheit")+"</div>";
 
   var opts=allExIds().map(function(id){
-    return "<option value='"+id+"'"+(id===exId?" selected":"")+">"+esc(META[id].label)+"</option>";
+    return "<option value='"+id+"'"+(id===exId?" selected":"")+">"+esc((META[id]||{}).label||id)+"</option>";
   }).join("");
 
   var body;
   if(series.length){
-    var rows=series.slice().reverse().map(function(p){
+    var rows=series.slice().reverse().map(function(p,ri){
+      var setsHtml = p.sets.map(function(x){ return lastSetText(x, exById(exId)); }).join(" · ");
+      if(ri===0) setsHtml = "<span class='lastval'>"+setsHtml+"</span>";
       return "<tr><td>"+p.datum+"</td><td class='mut'>"+(p.week||"–")+"</td><td class='mono'>"+
-        p.sets.map(function(x){ return fmt(Number(x.kg))+"×"+x.reps+(x.rir!==""?"@"+x.rir:""); }).join(" · ")+
+        setsHtml+
         "</td><td class='r mono'>"+p.ton+"</td></tr>";
     }).join("");
     body = sparkline(series)+
@@ -1184,10 +1221,10 @@ function ghCardHTML(){
 
 /* ---------- Plan ---------- */
 function planHTML(){
-  var week=[["Mo","Tennis",""],["Di","GK 1","a1"],["Mi","Pause",""],["Do","GK 2","a2"],
-            ["Fr","Pause",""],["Sa","GK 3","a3"],["So","Gehen",""]];
-  var head="<div class='card'><h3 class='h3'>Alle drei Einheiten sind Ganzkörpereinheiten</h3>"+
-    "<p class='p'>Jede Einheit trainiert Beine, Brust, Rücken, Schulter und Arme. Die Priorität legt nur fest, was zuerst kommt und einen Satz mehr bekommt. Jeder Muskel wird 3× pro Woche gereizt. Der Plan läuft 8 Wochen unverändert — keine Übungsrotation.</p>"+
+  var week=[["Mo","Tennis",""],["Di","Pull","a1"],["Mi","Pause",""],["Do","Push","a2"],
+            ["Fr","Pause",""],["Sa","Leg","a3"],["So","Gehen",""]];
+  var head="<div class='card'><h3 class='h3'>Drei Einheiten: Pull, Push, Leg</h3>"+
+    "<p class='p'>Day 1 Pull öffnet mit Clean Prep und Power Clean, danach Back Squat und Pull-ups. Day 2 Push beginnt mit Bench Press, ergänzt durch Landmine Row, Z-Press, Overhead Carry und Hanging Tuck-ups. Day 3 Leg ist einbeinig und hintere Kette — Split Squat, Step-up, DB RDL, Glute Bridge, Copenhagen Plank.</p>"+
     "<p class='p mut'>Trainingstage sind Dienstag, Donnerstag und Samstag. Montag ist Tennis, dazwischen liegt jeweils ein voller Pausentag. Mittwoch, Freitag und Sonntag sind die Tage für Eisbad und ruhiges Gehen.</p>"+
     "<div class='week'>"+week.map(function(w){
       return "<div class='wday "+w[2]+"'><span class='wd'>"+w[0]+"</span><span class='wt'>"+w[1]+"</span></div>";
@@ -1196,20 +1233,20 @@ function planHTML(){
   var units=UNITS.map(function(u){
     var open=S.openPlan===u.id, tbl="";
     if(open){
-      tbl="<div class='plantable'><table><thead><tr><th></th><th>Übung</th><th class='c'>Sätze × Wdh</th>"+
+      tbl="<div class='plantable'><table><thead><tr><th></th><th>Übung</th><th class='c'>Vorgabe</th>"+
         "<th class='c'>RIR</th><th class='c'>Pause</th></tr></thead><tbody>"+
         u.ex.map(function(e,i){
           return "<tr"+(e.prio?" class='p'":"")+"><td class='tidx'>"+(i+1)+"</td><td><b>"+esc(e.name)+"</b>"+
             (e.hint?" <i class='mut'>"+esc(e.hint)+"</i>":"")+"</td>"+
-            "<td class='c mono'>"+e.sets+" × "+e.min+"–"+e.max+"</td>"+
+            "<td class='c mono'>"+esc(schemeText(e))+"</td>"+
             "<td class='c mono'>"+e.rir+"</td><td class='c mono'>"+e.pause+"</td></tr>";
         }).join("")+"</tbody><tfoot><tr><td colspan='5'>"+
         u.ex.reduce(function(s,e){ return s+e.sets; },0)+" Arbeitssätze · ca. "+
         Math.round(unitMinutes(u))+" Min ohne Cooldown</td></tr></tfoot></table></div>";
     }
     return "<div class='planunit "+u.accent+"'><button class='planhead' data-plan='"+u.id+"'>"+
-      "<span class='planname'>Ganzkörper "+u.n+" <i>"+u.day+"</i></span>"+
-      "<span class='planprio'>Priorität "+u.prio+"</span>"+
+      "<span class='planname'>Day "+u.n+" "+u.prio+" <i>"+u.day+"</i></span>"+
+      "<span class='planprio'>"+u.prio+"</span>"+
       "<span class='chev'>"+(open?"−":"+")+"</span></button>"+tbl+"</div>";
   }).join("");
 
@@ -1220,17 +1257,24 @@ function planHTML(){
 function referenzHTML(){
   var warmRows=[["<b>Satz 1</b> <i class='mut'>ca. 50 % Arbeitsgewicht</i>","5 Wdh"],
     ["<b>Satz 2</b> <i class='mut'>ca. 75–80 %</i>","2–3 Wdh"],
-    ["Zweite Übung im gleichen Muster","1 × 70 % × 3"],
-    ["Klimmzug / Dips mit Eigengewicht","keine"],
-    ["Seitheben, Curls, Trizeps, Waden","keine"]];
-  var steig=[["Kniebeuge","+2,5 – 5 kg"],["Rumänisches Kreuzheben","+2,5 – 5 kg"],["LH-Bankdrücken","+2 – 2,5 kg"],
-    ["LH-Überkopfdrücken","+1 – 2 kg"],["LH-Rudern","+2,5 kg"],["Klimmzug / Dips","erst Wdh, dann +1 – 2,5 kg"],
-    ["Kurzhanteln","kleinste Stufe"]];
-  var regeln=["Dienstag, Donnerstag, Samstag trainieren.","Ganzkörper 1–3 in fester Reihenfolge, keine Rotation.",
-    "Nur die angegebenen Arbeitssätze — kein Zusatzvolumen.","Grundübungen RIR 1–2, Isolation RIR 0–1.",
-    "Gewicht erst erhöhen, wenn alle Sätze die Obergrenze erreichen.","Satzpausen einhalten: 2–4 Min, nicht verkürzen.",
-    "Jeden Satz protokollieren: Gewicht × Wdh × RIR.","Schlechte Technik zählt nicht als Progression.",
-    "Mindestens ein voller Pausentag zwischen den Einheiten.","Plan 8 Wochen unverändert durchziehen, dann bewerten."];
+    ["Power Clean, Back Squat, Bench, Split squat","wie oben"],
+    ["Clean Prep","ist das spezifische Aufwärmen"],
+    ["Pull-up, Hanging Tuck, Copenhagen","keine"]];
+  var steig=[["Power Clean","+2,5 kg"],["Back Squat","+2,5 – 5 kg"],["Bench Press","+2 – 2,5 kg"],
+    ["Landmine Row / DB Zpress","+1 – 2,5 kg"],["Split squat / Step-up / DB RDL","kleinste Stufe"],
+    ["Pull-up","erst Wdh, dann +1 – 2,5 kg Zusatz"],
+    ["OH Carry","+1 – 2 kg bei vollen 20 m"],
+    ["Copenhagen Plank","länger halten, dann erschweren"]];
+  var regeln=["Dienstag Pull, Donnerstag Push, Samstag Leg — in dieser Reihenfolge.",
+    "Nur die angegebenen Arbeitssätze — kein Zusatzvolumen.",
+    "Cleans nie bis zum Versagen. Pull-ups: 3×Max, nur saubere Wiederholungen.",
+    "Split squat und Step-up je Seite durchziehen, dann wechseln.",
+    "OH Carry in Metern, Copenhagen Plank in Sekunden eintragen.",
+    "Gewicht erst erhöhen, wenn alle Sätze die Vorgabe erreichen.",
+    "Satzpausen einhalten: 2–4 Min, nicht verkürzen.",
+    "Jeden Satz protokollieren: Gewicht × Wdh (oder m / s) × RIR.",
+    "Schlechte Technik zählt nicht als Progression.",
+    "Mindestens ein voller Pausentag zwischen den Einheiten."];
 
   return "<div class='card'><h3 class='h3'>Diese App</h3>"+
     "<p class='p'>Sie besteht aus einer einzigen Datei und lädt nichts nach — sie funktioniert vollständig ohne Internet, auch im Flugmodus oder im Keller ohne Empfang.</p>"+
@@ -1290,9 +1334,14 @@ function saveSession(){
   if(!any) return;
   if(!S.data.startDate) S.data.startDate=d.date;
   var week=weekOf(S.data.startDate,d.date);
+  /* Bereits gespeicherte Uebungen desselben Tages + derselben Einheit behalten
+     und nur die aktuell ausgefuellten Uebungen ueberschreiben/ergaenzen. */
+  var existing=null;
+  S.data.sessions.forEach(function(s){ if(s.date===d.date && s.unit===d.unitId) existing=s; });
+  var mergedSets=Object.assign({}, existing?existing.sets:{}, clean);
   S.data.sessions = S.data.sessions.filter(function(s){ return !(s.date===d.date && s.unit===d.unitId); });
   S.data.sessions.push({id:d.date+"-"+d.unitId,date:d.date,unit:d.unitId,week:week,stufe:d.stufe,
-    sets:clean,savedAt:Date.now()});
+    sets:mergedSets,savedAt:Date.now()});
   S.saved=true;
   S.autosavedAt=null;
   clearTimeout(_draftTimer);
