@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-08-set-overwrite">
+<meta name="app-version" content="2026-09-08-clear-after-save">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -708,16 +708,14 @@ function setFilled(s, exId){
 
 function lastByEx(){
   var m={};
-  var skipDate=S.draft && S.draft.date, skipUnit=S.draft && S.draft.unitId;
   S.data.sessions.slice().sort(function(a,b){
     var sa=a.savedAt||0, sb=b.savedAt||0;
     if(sa!==sb) return sa-sb;
     var da=a.date||"", db=b.date||"";
     return da<db?-1:da>db?1:0;
   }).forEach(function(s){
-    if(s.date===skipDate && s.unit===skipUnit) return;
     Object.keys(s.sets||{}).forEach(function(ex){
-      var valid=(s.sets[ex]||[]).filter(function(x){ return setHasValue(x); });
+      var valid=filledSets(s.sets[ex]);
       if(valid.length) m[ex]={date:s.date,sets:valid};
     });
   });
@@ -803,19 +801,14 @@ function copySet(s){
 function hydrateEntries(unitId, date, overlay){
   var entries=emptyEntries(unitId);
   var sess=sessionFor(date, unitId);
-  if(sess && sess.sets){
-    Object.keys(sess.sets).forEach(function(ex){
-      if(!entries[ex]) return;
-      (sess.sets[ex]||[]).forEach(function(s,i){
-        if(entries[ex][i] && setHasValue(s)) entries[ex][i]=copySet(s);
-      });
-    });
-  }
   if(overlay){
     Object.keys(overlay).forEach(function(ex){
       if(!entries[ex]) return;
       (overlay[ex]||[]).forEach(function(s,i){
-        if(entries[ex][i] && setHasValue(s)) entries[ex][i]=copySet(s);
+        if(!entries[ex][i] || !setHasValue(s)) return;
+        var saved=sess && sess.sets && sess.sets[ex] && sess.sets[ex][i];
+        if(setMatchesSaved(s, saved)) return;
+        entries[ex][i]=copySet(s);
       });
     });
   }
@@ -832,8 +825,24 @@ function setMatchesSaved(s, saved){
 }
 function saveSetBtn(exId, i, s){
   if(!setFilled(s, exId)) return "<span class='set-save empty' aria-hidden='true'>✓</span>";
-  var ok=setMatchesSaved(s, savedSetAt(exId, i));
-  return "<button class='set-save"+(ok?" done":"")+"' data-saveset='"+exId+"|"+i+"' aria-label='"+(ok?"Gespeichert":"Satz speichern")+"'>✓</button>";
+  return "<button class='set-save' data-saveset='"+exId+"|"+i+"' aria-label='Satz speichern'>✓</button>";
+}
+function effectiveSets(ex){
+  var draft=(S.draft && S.draft.entries[ex.id])||[];
+  var saved=((S.draft && sessionFor(S.draft.date, S.draft.unitId)||{}).sets||{})[ex.id]||[];
+  var out=[];
+  for(var i=0;i<ex.sets;i++){
+    out.push(setFilled(draft[i], ex.id) ? draft[i] : (saved[i]||draft[i]||{kg:"",reps:"",rir:""}));
+  }
+  return out;
+}
+function clearDraftSet(exId, index){
+  if(!S.draft || !S.draft.entries[exId] || !S.draft.entries[exId][index]) return;
+  S.draft.entries[exId][index]={ kg:"", reps:"", rir:"" };
+  var row=document.querySelector("[data-row='"+exId+"|"+index+"']");
+  if(!row) return;
+  var inputs=row.querySelectorAll("[data-in]");
+  for(var i=0;i<inputs.length;i++) inputs[i].value="";
 }
 
 function buildDraft(unitId,stufe,date,overlay){
@@ -961,7 +970,7 @@ function trainingHTML(){
         prevHTML(lp&&lp.sets[i], lp&&lp.date, s, ex)+
         "</div>";
     }).join("");
-    var ready = !kal && progressionReady(sets,ex);
+    var ready = !kal && progressionReady(effectiveSets(ex),ex);
     return "<section class='ex "+u.accent+"' data-card='"+ex.id+"'>"+
       "<div class='ex-head'><span class='ex-idx'>"+(idx+1)+"</span>"+
       "<div class='ex-name'>"+esc(ex.name)+(ex.hint?" <i>"+esc(ex.hint)+"</i>":"")+"</div>"+
@@ -1008,7 +1017,7 @@ function patchTraining(){
     var card=document.querySelector("[data-card='"+ex.id+"']");
     if(card){
       var slot=card.querySelector(".readyslot");
-      var ready = !kal && progressionReady(sets,ex);
+      var ready = !kal && progressionReady(effectiveSets(ex),ex);
       if(slot) slot.innerHTML = ready&&meta.incr
         ? "<span class='ready'>Nächstes Mal +"+fmt(meta.incr)+" kg"+(meta.bw?" Zusatz":"")+"</span>" : "";
       var w=card.querySelector(".warm");
@@ -1246,7 +1255,9 @@ function saveSet(exId, index, silent){
   S.data.sessions=mergeSessions(S.data.sessions, S.data.sessions);
   S.data.updatedAt=now;
   rememberUnit(d.unitId);
+  clearDraftSet(exId, index);
   parkDraft();
+  persistDrafts();
   persist().then(function(){
     patchTraining();
     if(!silent) toast("Satz gespeichert");
@@ -1255,19 +1266,6 @@ function saveSet(exId, index, silent){
   }).catch(function(e){
     if(!silent) toast("Nicht gespeichert: " + (e && e.message ? e.message : "unbekannter Fehler"));
   });
-}
-
-var _setSaveTimer=null;
-function saveSetSoon(exId, index){
-  clearTimeout(_setSaveTimer);
-  _setSaveTimer=setTimeout(function(){
-    if(!S.draft || !S.draft.entries[exId]) return;
-    var s=S.draft.entries[exId][index];
-    if(!setFilled(s, exId)) return;
-    if(!setHasValue(savedSetAt(exId, index))) return;
-    if(setMatchesSaved(s, savedSetAt(exId, index))) return;
-    saveSet(exId, index, true);
-  }, 450);
 }
 
 function downloadCsv(){
@@ -1317,7 +1315,7 @@ document.addEventListener("click",function(ev){
     st[field]=String(next);
     var input=document.querySelector("[data-in='"+ex+"|"+i+"|"+field+"']");
     if(input) input.value=next;
-    patchTraining(); saveDraftSoon(); saveSetSoon(ex, i); return;
+    patchTraining(); saveDraftSoon(); return;
   }
 
   if(el.id==="toolsToggle"){ S.toolsOpen=!S.toolsOpen; render(); return; }
@@ -1435,7 +1433,6 @@ document.addEventListener("input",function(ev){
     S.draft.entries[p[0]][Number(p[1])][p[2]] = t.value;
     patchTraining();
     saveDraftSoon();
-    saveSetSoon(p[0], Number(p[1]));
     return;
   }
   if(t.id==="dateInput"){
