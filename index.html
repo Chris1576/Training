@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-08-set3-save">
+<meta name="app-version" content="2026-09-08-save-hard">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -319,19 +319,28 @@ var DRAFTKEY = "gk3:draft-v3";
 var UNITKEY = "gk3:lastUnit";
 var STORAGE_MODE = "unbekannt";
 
+function writeLocal(key, obj){
+  try { localStorage.setItem(key, JSON.stringify(obj)); return true; }
+  catch(e){ return false; }
+}
+function readLocal(key){
+  try { var v=localStorage.getItem(key); return v ? JSON.parse(v) : null; }
+  catch(e){ return null; }
+}
 var store = {
   get: function(key){
     if (window.storage && window.storage.get) {
       return window.storage.get(key)
         .then(function(r){ return r && r.value ? JSON.parse(r.value) : null; })
-        .catch(function(){ return null; });
+        .catch(function(){ return readLocal(key); });
     }
-    try { var v = localStorage.getItem(key); return Promise.resolve(v ? JSON.parse(v) : null); }
-    catch(e){ return Promise.resolve(null); }
+    return Promise.resolve(readLocal(key));
   },
   set: function(key, obj){
+    var localOk = writeLocal(key, obj);
     var s = JSON.stringify(obj);
     function lokal(){
+      if(localOk) return Promise.resolve(true);
       try { localStorage.setItem(key, s); return Promise.resolve(true); }
       catch(e){
         var msg = (e && e.name==="QuotaExceededError")
@@ -355,6 +364,7 @@ var store = {
 };
 
 var STORAGE_OK = false;
+var STORE_READY = false;
 
 function initStorage(){
   var inApp = !!(window.storage && window.storage.get);
@@ -547,16 +557,20 @@ function syncUp(silent){
         if(merged.wipedAt && !(merged.sessions && merged.sessions.length))
           merged.wipedAt = merged.updatedAt;
         S.data = merged;
+        reapplyPending();
         return ghPut(S.data);
       })
       .then(function(result){
         if(result && result.data) S.data = reconcile(S.data, result.data);
+        reapplyPending();
         GH.lastSync = new Date().toISOString();
         store.set(GHKEY, GH);
         return persist();
       })
       .then(function(){
         ghStatus("Hochgeladen " + timeShort(new Date()));
+        if(S.tab==="training") patchTraining();
+        else render();
         if(!silent) toast("Mit allen Geräten abgeglichen");
       });
   }).catch(function(e){
@@ -581,12 +595,14 @@ function syncDown(silent){
         S.data = reconcile(S.data, remote);
         GH.lastSync = new Date().toISOString();
         store.set(GHKEY, GH);
+        reapplyPending();
         return persist().then(function(){
           var neu = S.data.sessions.length - vorher;
           ghStatus("Heruntergeladen " + timeShort(new Date()));
           var typing = S.tab==="training" && S.draft && draftHasValues(S.draft);
-          if(!typing) openLastUnit();
-          if(typing) patchTraining();
+          var recent = Date.now() - _lastSaveAt < 20000;
+          if(!typing && !recent) openLastUnit();
+          if(S.tab==="training") patchTraining();
           else render();
           if(neu>0) toast(neu+" Einheiten dazugeladen");
           else if(!silent) toast("Stand ist bereits aktuell");
@@ -821,7 +837,8 @@ function filledSets(arr){
 function cloneSetsMap(src){
   var sets={};
   Object.keys(src||{}).forEach(function(ex){
-    sets[ex]=(src[ex]||[]).map(function(x){ return x ? { kg:x.kg, reps:x.reps, rir:x.rir||"", savedAt:x.savedAt } : { kg:"", reps:"", rir:"" }; });
+    var arr=Array.isArray(src[ex]) ? src[ex] : [];
+    sets[ex]=arr.map(function(x){ return x ? { kg:x.kg, reps:x.reps, rir:x.rir||"", savedAt:x.savedAt } : { kg:"", reps:"", rir:"" }; });
   });
   return sets;
 }
@@ -1030,7 +1047,7 @@ function trainingHTML(){
 function numField(label,value,step,exId,i,field){
   return "<div class='numf'><span class='lbl'>"+label+"</span><div class='numrow'>"+
     "<button class='step' data-bump='"+exId+"|"+i+"|"+field+"|-1|"+step+"' aria-label='"+label+" verringern'>−</button>"+
-    "<input type='number' inputmode='decimal' value='"+esc(value)+"' placeholder='–' data-in='"+exId+"|"+i+"|"+field+"'>"+
+    "<input type='text' inputmode='decimal' enterkeyhint='done' autocomplete='off' value='"+esc(value)+"' placeholder='–' data-in='"+exId+"|"+i+"|"+field+"'>"+
     "<button class='step' data-bump='"+exId+"|"+i+"|"+field+"|1|"+step+"' aria-label='"+label+" erhöhen'>+</button>"+
     "</div></div>";
 }
@@ -1265,19 +1282,105 @@ function ghCardHTML(){
    INTERAKTION
    ============================================================ */
 var _persistChain = Promise.resolve();
+function snapshotData(){
+  try { return JSON.parse(JSON.stringify(S.data)); }
+  catch(e){ return S.data; }
+}
 function persist(){
-  var copy;
-  try { copy = JSON.parse(JSON.stringify(S.data)); }
-  catch(e){ copy = S.data; }
+  if(!STORE_READY) return Promise.resolve();
+  var immediate = snapshotData();
+  writeLocal(KEY, immediate);
   _persistChain = _persistChain.then(function(){
-    return store.set(KEY, copy);
+    return store.set(KEY, snapshotData());
   }, function(){
-    return store.set(KEY, copy);
+    return store.set(KEY, snapshotData());
   }).catch(function(e){
     toast("Nicht gespeichert: " + (e && e.message ? e.message : "unbekannter Fehler"));
     throw e;
   });
   return _persistChain;
+}
+function persistAllNow(){
+  if(!STORE_READY) return;
+  if(S.draft) flushDraftFromDom();
+  parkDraft();
+  clearTimeout(_draftTimer);
+  writeLocal(KEY, snapshotData());
+  writeLocal(DRAFTKEY, { bag:S.drafts, current:S.draft });
+  persist();
+  persistDrafts();
+}
+
+function normalizeNum(v){
+  if(v==null) return "";
+  var s=String(v).trim().replace(/\s/g,"").replace(",", ".");
+  if(s==="" || s==="-" || s==="." ) return "";
+  var n=Number(s);
+  return isNaN(n) ? "" : String(n);
+}
+function firstFilled(){
+  for(var i=0;i<arguments.length;i++){
+    if(arguments[i]!=="" && arguments[i]!=null) return arguments[i];
+  }
+  return "";
+}
+function readSetFromRow(exId, index){
+  var out={kg:"",reps:"",rir:""};
+  var row=document.querySelector("[data-row='"+exId+"|"+index+"']");
+  if(!row) return out;
+  var nodes=row.querySelectorAll("[data-in]");
+  for(var i=0;i<nodes.length;i++){
+    var raw=nodes[i].getAttribute("data-in");
+    if(!raw) continue;
+    out[raw.split("|")[2]] = nodes[i].value;
+  }
+  return out;
+}
+function mergeSetVals(a,b,c){
+  a=a||{}; b=b||{}; c=c||{};
+  return {
+    kg: firstFilled(a.kg, b.kg, c.kg),
+    reps: firstFilled(a.reps, b.reps, c.reps),
+    rir: firstFilled(a.rir, b.rir, c.rir) || ""
+  };
+}
+function ensureDraftSlot(exId, index){
+  if(!S.draft) return null;
+  if(!S.draft.entries[exId]) S.draft.entries[exId]=[];
+  while(S.draft.entries[exId].length<=index)
+    S.draft.entries[exId].push({kg:"",reps:"",rir:""});
+  return S.draft.entries[exId][index];
+}
+function writeSetIntoSession(date, unitId, stufe, exId, index, written){
+  if(!S.data.sessions) S.data.sessions=[];
+  var week=weekOf(S.data.startDate, date);
+  var existing=sessionFor(date, unitId);
+  var sets=cloneSetsMap(existing && existing.sets);
+  if(!sets[exId]) sets[exId]=[];
+  var need=Math.max(index+1, (exById(exId)||{}).sets||0);
+  while(sets[exId].length<need) sets[exId].push({kg:"",reps:"",rir:""});
+  sets[exId][index]=written;
+  S.data.sessions=S.data.sessions.filter(function(sess){ return !(sess.date===date && sess.unit===unitId); });
+  S.data.sessions.push({id:date+"-"+unitId,date:date,unit:unitId,week:week,stufe:stufe||"A",
+    sets:sets,savedAt:written.savedAt||Date.now()});
+  S.data.sessions=mergeSessions(S.data.sessions, S.data.sessions);
+  S.data.updatedAt=written.savedAt||Date.now();
+}
+var _lastSaveAt=0;
+var _pendingSaved=[];
+var _saveLock={};
+function rememberPending(date, unitId, exId, index, set){
+  _pendingSaved.push({date:date,unit:unitId,ex:exId,index:index,set:set,until:Date.now()+120000});
+}
+function reapplyPending(){
+  var now=Date.now();
+  _pendingSaved=_pendingSaved.filter(function(p){ return p.until>now; });
+  _pendingSaved.forEach(function(p){
+    var sess=sessionFor(p.date, p.unit);
+    var got=sess && sess.sets && sess.sets[p.ex] && sess.sets[p.ex][p.index];
+    if(setMatchesSaved(p.set, got)) return;
+    writeSetIntoSession(p.date, p.unit, (sess&&sess.stufe)||(S.draft&&S.draft.stufe)||"A", p.ex, p.index, p.set);
+  });
 }
 
 function flushDraftFromDom(){
@@ -1287,7 +1390,7 @@ function flushDraftFromDom(){
     var t=nodes[i], raw=t.getAttribute("data-in");
     if(!raw) continue;
     var p=raw.split("|"), ex=p[0], idx=Number(p[1]), field=p[2];
-    var slot=S.draft.entries[ex] && S.draft.entries[ex][idx];
+    var slot=ensureDraftSlot(ex, idx);
     if(!slot) continue;
     var next=t.value, cur=slot[field];
     /* Fokusverlust darf einen schon eingegebenen Wert nicht leeren. */
@@ -1297,42 +1400,41 @@ function flushDraftFromDom(){
 }
 
 function saveSet(exId, index, silent){
+  var lock=exId+"|"+index;
+  if(_saveLock[lock]) return;
+  _saveLock[lock]=true;
+  setTimeout(function(){ delete _saveLock[lock]; }, 700);
   var d=S.draft;
-  var before=d && d.entries[exId] && d.entries[exId][index]
-    ? { kg:d.entries[exId][index].kg, reps:d.entries[exId][index].reps, rir:d.entries[exId][index].rir||"" }
-    : { kg:"", reps:"", rir:"" };
+  if(!d){ if(!silent) toast("Satz unvollständig"); return; }
+  var slot=ensureDraftSlot(exId, index);
+  var before=slot ? { kg:slot.kg, reps:slot.reps, rir:slot.rir||"" } : { kg:"", reps:"", rir:"" };
+  var fromDom=readSetFromRow(exId, index);
   flushDraftFromDom();
-  var s=d && d.entries[exId] && d.entries[exId][index];
-  if(!s) s={ kg:"", reps:"", rir:"" };
-  if((s.kg===""||s.kg==null) && before.kg!==""&&before.kg!=null) s.kg=before.kg;
-  if((s.reps===""||s.reps==null) && before.reps!==""&&before.reps!=null) s.reps=before.reps;
-  if((s.rir===""||s.rir==null) && before.rir) s.rir=before.rir;
+  var s=mergeSetVals(d.entries[exId][index], fromDom, before);
+  s.kg=normalizeNum(s.kg);
+  s.reps=normalizeNum(s.reps);
+  d.entries[exId][index]=s;
   if(!setFilled(s, exId)){ if(!silent) toast("Satz unvollständig"); return; }
   var now=Date.now();
   if(!S.data.startDate) S.data.startDate=d.date;
-  var week=weekOf(S.data.startDate,d.date);
-  var existing=sessionFor(d.date, d.unitId);
-  var sets=cloneSetsMap(existing && existing.sets);
-  if(!sets[exId]) sets[exId]=[];
-  var need=Math.max(index+1, (exById(exId)||{}).sets||0);
-  while(sets[exId].length<need) sets[exId].push({kg:"",reps:"",rir:""});
-  /* Gleicher Satzindex: immer nur die zuletzt eingegebenen Wdh/kg, keine Historie. */
-  sets[exId][index]={ kg:s.kg, reps:s.reps, rir:s.rir||"", savedAt:now };
-  S.data.sessions=S.data.sessions.filter(function(sess){ return !(sess.date===d.date && sess.unit===d.unitId); });
-  S.data.sessions.push({id:d.date+"-"+d.unitId,date:d.date,unit:d.unitId,week:week,stufe:d.stufe,
-    sets:sets,savedAt:now});
-  S.data.sessions=mergeSessions(S.data.sessions, S.data.sessions);
-  S.data.updatedAt=now;
+  var written={ kg:s.kg, reps:s.reps, rir:s.rir||"", savedAt:now };
+  writeSetIntoSession(d.date, d.unitId, d.stufe, exId, index, written);
+  rememberPending(d.date, d.unitId, exId, index, written);
+  _lastSaveAt=now;
   rememberUnit(d.unitId);
   clearDraftSet(exId, index);
-  parkDraft();
-  persistDrafts();
+  persistAllNow();
   patchTraining();
   if(!silent) toast("Satz gespeichert");
   persist().then(function(){
+    reapplyPending();
     patchTraining();
     if(!ghReady()) return;
-    return syncUp(true).catch(function(){});
+    return syncUp(true).then(function(){
+      reapplyPending();
+      persist();
+      patchTraining();
+    }).catch(function(){});
   }).catch(function(e){
     if(!silent) toast("Nicht gespeichert: " + (e && e.message ? e.message : "unbekannter Fehler"));
   });
@@ -1371,7 +1473,7 @@ document.addEventListener("pointerdown",function(ev){
 }, true);
 
 document.addEventListener("click",function(ev){
-  var el=ev.target.closest ? ev.target.closest("[data-tab],[data-unit],[data-bump],#toolsToggle,#csvBtn,#clearBtn,#exportBtn,#backupBtn,#ghToggle,#ghSave,#ghUp,#ghDown,#ghForce") : null;
+  var el=ev.target.closest ? ev.target.closest("[data-tab],[data-unit],[data-saveset],[data-bump],#toolsToggle,#csvBtn,#clearBtn,#exportBtn,#backupBtn,#ghToggle,#ghSave,#ghUp,#ghDown,#ghForce") : null;
   if(!el) return;
 
   var v;
@@ -1379,6 +1481,11 @@ document.addEventListener("click",function(ev){
 
   if((v=el.getAttribute("data-unit"))){
     if(v!==S.draft.unitId){ showUnit(v,S.draft.stufe,S.draft.date); rememberUnit(v); saveDraftSoon(); render(); }
+    return;
+  }
+  if((v=el.getAttribute("data-saveset"))){
+    var sp=v.split("|");
+    saveSet(sp[0], Number(sp[1]));
     return;
   }
 
@@ -1501,12 +1608,20 @@ document.addEventListener("change",function(ev){
   r.readAsText(f);
 });
 
+function applyDraftInput(t){
+  var v=t.getAttribute && t.getAttribute("data-in");
+  if(!v || !S.draft) return false;
+  var p=v.split("|"), slot=ensureDraftSlot(p[0], Number(p[1]));
+  if(!slot) return false;
+  var next=t.value, cur=slot[p[2]];
+  if((next===""||next==null) && cur!==""&&cur!=null) return true;
+  slot[p[2]] = next;
+  return true;
+}
+
 document.addEventListener("input",function(ev){
-  var t=ev.target, v;
-  if((v=t.getAttribute && t.getAttribute("data-in"))){
-    var p=v.split("|");
-    if(S.draft.entries[p[0]] && S.draft.entries[p[0]][Number(p[1])])
-      S.draft.entries[p[0]][Number(p[1])][p[2]] = t.value;
+  var t=ev.target;
+  if(applyDraftInput(t)){
     patchTraining();
     saveDraftSoon();
     return;
@@ -1521,7 +1636,13 @@ document.addEventListener("input",function(ev){
 });
 
 document.addEventListener("change",function(ev){
-  if(ev.target.id==="exSelect"){ S.verlaufEx=ev.target.value; render(); }
+  var t=ev.target;
+  if(applyDraftInput(t)){
+    patchTraining();
+    saveDraftSoon();
+    return;
+  }
+  if(t.id==="exSelect"){ S.verlaufEx=t.value; render(); }
 });
 
 /* ============================================================
@@ -1535,6 +1656,7 @@ initStorage()
       S.data=saved;
       S.data.sessions=mergeSessions(S.data.sessions, S.data.sessions);
     }
+    STORE_READY = true;
     return store.get(DRAFTKEY).then(function(d){
       if(d) return d;
       return store.get("gk3:draft-v2");
@@ -1556,22 +1678,26 @@ initStorage()
       var unit=suggestedUnit();
       buildDraft(unit,"A",today());
     }
+    STORE_READY = true;
     render();
     if(S.draft && draftHasValues(S.draft)) toast("Laufende Einheit wiederhergestellt");
-    if(ghReady() && GH.auto) syncDown(true);
+    if(ghReady() && GH.auto) syncUp(true);
   });
 
-/* Beim Verlassen der Seite sofort sichern, ohne auf den Timer zu warten */
-window.addEventListener("pagehide", function(){
-  if(S.draft){ flushDraftFromDom(); clearTimeout(_draftTimer); persistDrafts(); }
-});
+/* Beim Verlassen sofort Daten und Entwurf schreiben, nicht nur den Draft. */
+function flushOnLeave(){
+  persistAllNow();
+}
+window.addEventListener("pagehide", flushOnLeave);
+window.addEventListener("beforeunload", flushOnLeave);
 document.addEventListener("visibilitychange", function(){
-  if(document.visibilityState==="hidden" && S.draft){
-    flushDraftFromDom(); clearTimeout(_draftTimer); persistDrafts();
+  if(document.visibilityState==="hidden"){
+    flushOnLeave();
+    return;
   }
-  /* Beim Zurueckkehren zur App automatisch den neuesten Stand holen */
   if(document.visibilityState==="visible" && ghReady() && GH.auto){
-    syncDown(true);
+    if(Date.now() - _lastSaveAt < 8000) return;
+    syncUp(true);
   }
 });
 </script>
