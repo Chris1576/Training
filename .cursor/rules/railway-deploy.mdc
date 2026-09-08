@@ -1,0 +1,14 @@
+---
+description: Nach App-Änderungen immer direkt auf Railway deployen
+alwaysApply: true
+---
+
+# Railway immer direkt aktualisieren
+
+Nach jeder Änderung an der Trainingslog-App (UI, `server.js`, Sync, Speicher) die Änderungen **sofort auf Railway** bringen. Nicht auf den Nutzer warten.
+
+1. Relevante Dateien committen (kein `data/`, keine Secrets, kein `Log-In.txt`).
+2. Nach `origin/main` pushen, damit GitHub und Railway denselben Stand haben.
+3. Zusätzlich `railway up` im Projektroot ausführen, damit production (`https://trainingslog-production.up.railway.app`) nicht auf den GitHub-Webhook wartet.
+
+Linked service: `trainingslog`, Environment: `production`.

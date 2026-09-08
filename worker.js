@@ -58,15 +58,51 @@ function encodeBase64(str) {
   return btoa(bin);
 }
 
-/* Einheiten zusammenfuehren: gleicher Tag + gleiche Einheit = derselbe
-   Eintrag, es gewinnt der zuletzt gespeicherte. Dadurch koennen Handy und
-   PC gleichzeitig speichern, ohne dass etwas verloren geht. */
+function setHasVal(s) {
+  return !!(s && ((s.kg !== "" && s.kg != null) || (s.reps !== "" && s.reps != null)));
+}
+function setStamp(s, sessionSavedAt) {
+  return Number(s && s.savedAt) || Number(sessionSavedAt) || 0;
+}
+function mergeSetArrays(a, b, savedA, savedB) {
+  const aa = a || [];
+  const bb = b || [];
+  const n = Math.max(aa.length, bb.length);
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const sa = aa[i];
+    const sb = bb[i];
+    if (sa == null && sb == null) continue;
+    if (sa == null) { out.push(sb); continue; }
+    if (sb == null) { out.push(sa); continue; }
+    const fa = setHasVal(sa);
+    const fb = setHasVal(sb);
+    if (fa && !fb) { out.push(sa); continue; }
+    if (fb && !fa) { out.push(sb); continue; }
+    out.push(setStamp(sa, savedA) >= setStamp(sb, savedB) ? sa : sb);
+  }
+  return out;
+}
+/* Gleicher Tag + gleiche Einheit = derselbe Eintrag. Pro Satzindex
+   gewinnt der juengere savedAt — andere Saetze bleiben erhalten. */
 function mergeSessions(a, b) {
   const map = {};
   (a || []).concat(b || []).forEach(function (s) {
     const k = s.date + "|" + s.unit;
     const alt = map[k];
-    if (!alt || (s.savedAt || 0) >= (alt.savedAt || 0)) map[k] = s;
+    if (!alt) { map[k] = s; return; }
+    const newer = (s.savedAt || 0) >= (alt.savedAt || 0) ? s : alt;
+    const sets = {};
+    const keys = {};
+    Object.keys(s.sets || {}).forEach(function (ex) { keys[ex] = 1; });
+    Object.keys(alt.sets || {}).forEach(function (ex) { keys[ex] = 1; });
+    Object.keys(keys).forEach(function (ex) {
+      sets[ex] = mergeSetArrays((s.sets || {})[ex], (alt.sets || {})[ex], s.savedAt, alt.savedAt);
+    });
+    map[k] = {
+      id: newer.id, date: newer.date, unit: newer.unit, week: newer.week,
+      stufe: newer.stufe, sets: sets, savedAt: Math.max(s.savedAt || 0, alt.savedAt || 0),
+    };
   });
   return Object.keys(map).map(function (k) { return map[k]; })
     .sort(function (x, y) { return x.date < y.date ? -1 : 1; });
@@ -142,7 +178,7 @@ export default {
           const detail = await out.r.text();
           return json({ error: "GitHub PUT " + out.r.status, detail: detail }, 502);
         }
-        return json({ ok: true, sessions: out.merged.sessions.length }, 200);
+        return json({ ok: true, sessions: out.merged.sessions.length, data: out.merged }, 200);
       }
 
       return json({ error: "Method not allowed" }, 405);
