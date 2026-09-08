@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-08-save-hard">
+<meta name="app-version" content="2026-09-08-no-prio">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -111,8 +111,6 @@ main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction
 .ex-idx{font-size:11px;font-weight:700;color:var(--mut);font-variant-numeric:tabular-nums}
 .ex-name{flex:1;font-size:15px;font-weight:700;line-height:1.25}
 .ex-name i{font-style:normal;font-weight:400;color:var(--mut);font-size:12.5px}
-.prio{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);
-  border:1px solid var(--line);padding:2px 8px;border-radius:999px}
 .ex-target{display:flex;gap:14px;padding:4px 14px 8px;font-size:12px;color:var(--mut);flex-wrap:wrap}
 .ex-target b{color:var(--ink)}
 .warm{margin:0 14px 8px;padding:7px 9px;background:var(--sunk);font-size:12px;color:var(--mut);border-radius:12px}
@@ -232,7 +230,6 @@ td.k{width:74px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color
   .ex-head{padding:14px 14px 0;align-items:center}
   .ex-name{font-size:17px}
   .ex-target{padding:6px 14px 10px;font-size:13px;gap:12px}
-  .prio{font-size:10px;padding:3px 8px}
   .warm{margin:0 14px 10px;padding:9px 11px;font-size:13px;border-radius:12px}
   .set{grid-template-columns:16px 1fr 1fr 36px;gap:6px 7px;padding:9px 12px}
   .set-n{padding-bottom:9px}
@@ -293,20 +290,20 @@ var META = {
 
 var UNITS = [
  {id:"GK1",n:1,day:"Dienstag",prio:"Pull",accent:"a1",ex:[
-  {id:"clean_prep",name:"Clean Prep",scheme:"3× 5+5+5",sets:3,min:5,max:5,rir:"2",pause:"1,5 Min",prio:true},
-  {id:"power_clean",name:"Power Clean",scheme:"5×3",sets:5,min:3,max:3,rir:"2",pause:"1,5 Min",prio:true,warm:true},
-  {id:"back_squat",name:"Back Squat",scheme:"3×5",sets:3,min:5,max:5,rir:"2",pause:"1,5 Min",prio:true,warm:true},
+  {id:"clean_prep",name:"Clean Prep",scheme:"3× 5+5+5",sets:3,min:5,max:5,rir:"2",pause:"1,5 Min"},
+  {id:"power_clean",name:"Power Clean",scheme:"5×3",sets:5,min:3,max:3,rir:"2",pause:"1,5 Min",warm:true},
+  {id:"back_squat",name:"Back Squat",scheme:"3×5",sets:3,min:5,max:5,rir:"2",pause:"1,5 Min",warm:true},
   {id:"pullup",name:"Pull up",scheme:"3×Max",sets:3,rir:"0",pause:"1,5 Min"}]},
  {id:"GK2",n:2,day:"Donnerstag",prio:"Push",accent:"a2",ex:[
-  {id:"bench",name:"Bench Press",scheme:"3×6–8",sets:3,min:6,max:8,rir:"1–2",pause:"1,5 Min",prio:true,warm:true},
-  {id:"landmine_row",name:"Landmine Row",scheme:"3×6–8",sets:3,min:6,max:8,rir:"1–2",pause:"1,5 Min",prio:true},
+  {id:"bench",name:"Bench Press",scheme:"3×6–8",sets:3,min:6,max:8,rir:"1–2",pause:"1,5 Min",warm:true},
+  {id:"landmine_row",name:"Landmine Row",scheme:"3×6–8",sets:3,min:6,max:8,rir:"1–2",pause:"1,5 Min"},
   {id:"db_zpress",name:"DB Zpress",scheme:"3×6–8",sets:3,min:6,max:8,rir:"2",pause:"1,5 Min",warm:true},
   {id:"oh_carry",name:"OH Carry",scheme:"3×20 m",sets:3,min:20,max:20,rir:"1",pause:"1,5 Min",repLabel:"m"},
   {id:"hanging_tuck",name:"Hanging Tuck up",scheme:"3×10",sets:3,min:10,max:10,rir:"0–1",pause:"1,5 Min"}]},
  {id:"GK3",n:3,day:"Samstag",prio:"Leg",accent:"a3",ex:[
-  {id:"split_squat",name:"Split squat",hint:"/side",scheme:"3×6–8/side",sets:3,min:6,max:8,rir:"1–2",pause:"1,5 Min",prio:true,warm:true},
+  {id:"split_squat",name:"Split squat",hint:"/side",scheme:"3×6–8/side",sets:3,min:6,max:8,rir:"1–2",pause:"1,5 Min",warm:true},
   {id:"step_up",name:"Step up",hint:"/side",scheme:"3×6–8/side",sets:3,min:6,max:8,rir:"1–2",pause:"1,5 Min"},
-  {id:"db_rdl",name:"DB RDL",scheme:"3×8–12",sets:3,min:8,max:12,rir:"2",pause:"1,5 Min",prio:true,warm:true},
+  {id:"db_rdl",name:"DB RDL",scheme:"3×8–12",sets:3,min:8,max:12,rir:"2",pause:"1,5 Min",warm:true},
   {id:"glute_bridge",name:"Glute Bridge",scheme:"3×6–8",sets:3,min:6,max:8,rir:"1",pause:"1,5 Min"},
   {id:"copenhagen",name:"Copenhagen Plank",hint:"/side",scheme:"3×30 s",sets:3,min:30,max:30,rir:"0–1",pause:"1,5 Min",repLabel:"s"}]}
 ];
@@ -1029,8 +1026,7 @@ function trainingHTML(){
     var ready = !kal && progressionReady(effectiveSets(ex),ex);
     return "<section class='ex "+u.accent+"' data-card='"+ex.id+"'>"+
       "<div class='ex-head'><span class='ex-idx'>"+(idx+1)+"</span>"+
-      "<div class='ex-name'>"+esc(ex.name)+(ex.hint?" <i>"+esc(ex.hint)+"</i>":"")+"</div>"+
-      (ex.prio?"<span class='prio'>Priorität</span>":"")+"</div>"+
+      "<div class='ex-name'>"+esc(ex.name)+(ex.hint?" <i>"+esc(ex.hint)+"</i>":"")+"</div></div>"+
       "<div class='ex-target'><span><b>"+esc(schemeText(ex))+"</b></span>"+
       "<span>Pause "+ex.pause+"</span></div>"+
       warm+"<div class='sets'>"+rows+"</div>"+
