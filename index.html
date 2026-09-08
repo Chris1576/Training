@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-08-week-tons">
+<meta name="app-version" content="2026-09-08-set-fill-bg">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -120,8 +120,8 @@ main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction
 
 .set{display:grid;grid-template-columns:18px 1fr 1fr 36px;align-items:end;gap:8px 10px;
   padding:8px 14px;border-top:1px solid var(--line2)}
-.set.hit{background:var(--a1s)}
 .set.under{background:#1F1B13}
+.set.hit{background:var(--a1s)}
 .set-n{font-size:11px;color:var(--mut);font-weight:700;padding-bottom:8px}
 .set-save{width:34px;min-height:34px;border:0;border-radius:10px;background:var(--a1);color:#0E1110;
   font-size:16px;font-weight:700;line-height:1;align-self:end;margin-bottom:1px}
@@ -976,7 +976,7 @@ function trainingHTML(){
         : "50 % × 5 → 78 % × 3, sobald ein Arbeitsgewicht steht")+"</div>";
     }
     var rows = sets.map(function(s,i){
-      var hit = ex.max!=null && s.reps!=="" && Number(s.reps)>=ex.max;
+      var hit = setHasValue(s);
       var und = ex.min!=null && s.reps!=="" && Number(s.reps)<ex.min;
       return "<div class='set"+(hit?" hit":"")+(und?" under":"")+"' data-row='"+ex.id+"|"+i+"'>"+
         "<span class='set-n'>"+(i+1)+"</span>"+
@@ -1022,7 +1022,7 @@ function patchTraining(){
     sets.forEach(function(s,i){
       var row=document.querySelector("[data-row='"+ex.id+"|"+i+"']");
       if(!row) return;
-      var hit = ex.max!=null && s.reps!=="" && Number(s.reps)>=ex.max;
+      var hit = setHasValue(s);
       var und = ex.min!=null && s.reps!=="" && Number(s.reps)<ex.min;
       row.classList.toggle("hit",hit); row.classList.toggle("under",und);
       var pv=row.querySelector(".prev");
