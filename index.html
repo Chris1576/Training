@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-08-set-save">
+<meta name="app-version" content="2026-09-08-set-overwrite">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -778,6 +778,16 @@ function sessionFor(date, unitId){
   });
   return found;
 }
+function filledSets(arr){
+  return (arr||[]).filter(function(x){ return setHasValue(x); });
+}
+function cloneSetsMap(src){
+  var sets={};
+  Object.keys(src||{}).forEach(function(ex){
+    sets[ex]=(src[ex]||[]).map(function(x){ return x ? { kg:x.kg, reps:x.reps, rir:x.rir||"", savedAt:x.savedAt } : { kg:"", reps:"", rir:"" }; });
+  });
+  return sets;
+}
 function emptyEntries(unitId){
   var u=unitById(unitId), entries={};
   u.ex.forEach(function(ex){
@@ -1059,8 +1069,8 @@ function verlaufHTML(){
   var exId=S.verlaufEx;
   var series=[];
   sessions.forEach(function(s){
-    if(!s.sets[exId]) return;
-    var sets=s.sets[exId];
+    var sets=filledSets(s.sets && s.sets[exId]);
+    if(!sets.length) return;
     var top=Math.max.apply(null,sets.map(function(x){ return Number(x.kg)||0; }));
     series.push({datum:dateShort(s.date),date:s.date,kg:top,ton:Math.round(tonnage(sets)),sets:sets,week:s.week});
   });
@@ -1087,7 +1097,7 @@ function verlaufHTML(){
   var body;
   if(series.length){
     var rows=series.slice().reverse().map(function(p,ri){
-      var setsHtml = p.sets.map(function(x){ return lastSetText(x, exById(exId)); }).join(" · ");
+      var setsHtml = filledSets(p.sets).map(function(x){ return lastSetText(x, exById(exId)); }).join(" · ");
       if(ri===0) setsHtml = "<span class='lastval'>"+setsHtml+"</span>";
       return "<tr><td>"+p.datum+"</td><td class='mut'>"+(p.week||"–")+"</td><td class='mono'>"+
         setsHtml+
@@ -1105,7 +1115,8 @@ function verlaufHTML(){
     var lines=["Datum;Woche;Einheit;Stufe;Uebung;Satz;Wdh;kg;RIR"];
     sessions.forEach(function(s){
       Object.keys(s.sets).forEach(function(ex){
-        s.sets[ex].forEach(function(x,i){
+        (s.sets[ex]||[]).forEach(function(x,i){
+          if(!setHasValue(x)) return;
           lines.push([s.date,s.week,s.unit,s.stufe||"A",(META[ex]||{}).label||ex,i+1,x.reps,x.kg,x.rir].join(";"));
         });
       });
@@ -1215,45 +1226,56 @@ function flushDraftFromDom(){
   }
 }
 
-function saveSet(exId, index){
+function saveSet(exId, index, silent){
   flushDraftFromDom();
   var d=S.draft;
   var s=d && d.entries[exId] && d.entries[exId][index];
-  if(!setFilled(s, exId)){ toast("Satz unvollständig"); return; }
+  if(!setFilled(s, exId)){ if(!silent) toast("Satz unvollständig"); return; }
   var now=Date.now();
   if(!S.data.startDate) S.data.startDate=d.date;
   var week=weekOf(S.data.startDate,d.date);
   var existing=sessionFor(d.date, d.unitId);
-  var sets={};
-  if(existing && existing.sets){
-    Object.keys(existing.sets).forEach(function(ex){
-      sets[ex]=(existing.sets[ex]||[]).map(function(x){ return x; });
-    });
-  }
+  var sets=cloneSetsMap(existing && existing.sets);
   if(!sets[exId]) sets[exId]=[];
   while(sets[exId].length<=index) sets[exId].push({kg:"",reps:"",rir:""});
+  /* Gleicher Satzindex: immer nur die zuletzt eingegebenen Wdh/kg, keine Historie. */
   sets[exId][index]={ kg:s.kg, reps:s.reps, rir:s.rir||"", savedAt:now };
   S.data.sessions=S.data.sessions.filter(function(sess){ return !(sess.date===d.date && sess.unit===d.unitId); });
   S.data.sessions.push({id:d.date+"-"+d.unitId,date:d.date,unit:d.unitId,week:week,stufe:d.stufe,
     sets:sets,savedAt:now});
+  S.data.sessions=mergeSessions(S.data.sessions, S.data.sessions);
   S.data.updatedAt=now;
   rememberUnit(d.unitId);
   parkDraft();
   persist().then(function(){
     patchTraining();
-    toast("Satz gespeichert");
+    if(!silent) toast("Satz gespeichert");
     if(!ghReady()) return;
     return syncUp(true).catch(function(){});
   }).catch(function(e){
-    toast("Nicht gespeichert: " + (e && e.message ? e.message : "unbekannter Fehler"));
+    if(!silent) toast("Nicht gespeichert: " + (e && e.message ? e.message : "unbekannter Fehler"));
   });
+}
+
+var _setSaveTimer=null;
+function saveSetSoon(exId, index){
+  clearTimeout(_setSaveTimer);
+  _setSaveTimer=setTimeout(function(){
+    if(!S.draft || !S.draft.entries[exId]) return;
+    var s=S.draft.entries[exId][index];
+    if(!setFilled(s, exId)) return;
+    if(!setHasValue(savedSetAt(exId, index))) return;
+    if(setMatchesSaved(s, savedSetAt(exId, index))) return;
+    saveSet(exId, index, true);
+  }, 450);
 }
 
 function downloadCsv(){
   var lines=["Datum;Woche;Einheit;Stufe;Uebung;Satz;Wdh;kg;RIR"];
   S.data.sessions.slice().sort(function(a,b){ return a.date<b.date?-1:1; }).forEach(function(s){
     Object.keys(s.sets).forEach(function(ex){
-      s.sets[ex].forEach(function(x,i){
+      (s.sets[ex]||[]).forEach(function(x,i){
+        if(!setHasValue(x)) return;
         lines.push([s.date,s.week,s.unit,s.stufe||"A",(META[ex]||{}).label||ex,i+1,x.reps,x.kg,x.rir].join(";"));
       });
     });
@@ -1295,7 +1317,7 @@ document.addEventListener("click",function(ev){
     st[field]=String(next);
     var input=document.querySelector("[data-in='"+ex+"|"+i+"|"+field+"']");
     if(input) input.value=next;
-    patchTraining(); saveDraftSoon(); return;
+    patchTraining(); saveDraftSoon(); saveSetSoon(ex, i); return;
   }
 
   if(el.id==="toolsToggle"){ S.toolsOpen=!S.toolsOpen; render(); return; }
@@ -1413,6 +1435,7 @@ document.addEventListener("input",function(ev){
     S.draft.entries[p[0]][Number(p[1])][p[2]] = t.value;
     patchTraining();
     saveDraftSoon();
+    saveSetSoon(p[0], Number(p[1]));
     return;
   }
   if(t.id==="dateInput"){
@@ -1435,7 +1458,10 @@ initStorage()
   .then(function(){ return store.get(GHKEY); })
   .then(function(cfg){ if(cfg) GH = Object.assign(GH, cfg); return store.get(KEY); })
   .then(function(saved){
-    if(saved && saved.sessions) S.data=saved;
+    if(saved && saved.sessions){
+      S.data=saved;
+      S.data.sessions=mergeSessions(S.data.sessions, S.data.sessions);
+    }
     return store.get(DRAFTKEY).then(function(d){
       if(d) return d;
       return store.get("gk3:draft-v2");
