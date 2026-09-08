@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-08-smaller-check">
+<meta name="app-version" content="2026-09-08-week-tons">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -662,6 +662,22 @@ function openLastUnit(){
 }
 function unitById(id){ for(var i=0;i<UNITS.length;i++) if(UNITS[i].id===id) return UNITS[i]; return UNITS[0]; }
 function tonnage(sets){ var t=0; (sets||[]).forEach(function(x){ t+=(Number(x.kg)||0)*(Number(x.reps)||0); }); return t; }
+function fmtTons(kg){
+  if(!kg) return "0,00";
+  return (kg/1000).toFixed(2).replace(".",",");
+}
+function weekTonnageForEx(sessions, exId){
+  var map={};
+  (sessions||[]).forEach(function(s){
+    var t=tonnage(filledSets(s.sets && s.sets[exId]));
+    if(!t) return;
+    var w=s.week || weekOf(S.data.startDate, s.date);
+    if(!map[w]) map[w]={week:w,ton:0,n:0};
+    map[w].ton+=t;
+    map[w].n++;
+  });
+  return Object.keys(map).map(Number).sort(function(a,b){ return a-b; }).map(function(w){ return map[w]; });
+}
 
 function progressionReady(sets,ex){
   if(ex.max==null) return false;
@@ -1112,9 +1128,26 @@ function verlaufHTML(){
         setsHtml+
         "</td><td class='r mono'>"+p.ton+"</td></tr>";
     }).join("");
+    var curWeek=weekOf(S.data.startDate,today());
+    var weeks=weekTonnageForEx(sessions, exId);
+    var weekRows=weeks.slice().reverse().map(function(w){
+      var now=w.week===curWeek;
+      return "<tr><td>"+(now?"<span class='lastval'>Woche "+w.week+"</span>":"Woche "+w.week)+"</td>"+
+        "<td class='mut'>"+w.n+(w.n===1?" Einheit":" Einheiten")+"</td>"+
+        "<td class='r mut'>"+Math.round(w.ton)+" kg</td>"+
+        "<td class='r mono"+(now?" lastval":"")+"'>"+fmtTons(w.ton)+" t</td></tr>";
+    }).join("");
+    var weekSum=weeks.reduce(function(s,w){ return s+w.ton; },0);
+    var weekBlock=weeks.length
+      ? "<h3 class='h3' style='margin:16px 0 8px'>Tonnen pro Woche</h3>"+
+        "<p class='p mut'>Summe dieser Übung je Trainingswoche — alle Sätze zusammen.</p>"+
+        "<table><thead><tr><th>Woche</th><th>Einheiten</th><th class='r'>kg</th><th class='r'>Tonnen</th></tr></thead><tbody>"+
+        weekRows+"</tbody><tfoot><tr><td colspan='3'>Gesamt diese Übung</td><td class='r mono'>"+fmtTons(weekSum)+" t</td></tr></tfoot></table>"
+      : "";
     body = sparkline(series)+
       (stalled?"<div class='note b'><b>Keine Steigerung über drei Einheiten.</b> Kandidat für Deload oder Technikanalyse — nicht für zusätzliches Volumen.</div>":"")+
-      "<table><thead><tr><th>Datum</th><th>Wo.</th><th>Sätze</th><th class='r'>Tonnage</th></tr></thead><tbody>"+rows+"</tbody></table>";
+      "<table><thead><tr><th>Datum</th><th>Wo.</th><th>Sätze</th><th class='r'>Tonnage</th></tr></thead><tbody>"+rows+"</tbody></table>"+
+      weekBlock;
   } else {
     body = "<p class='p mut'>Für diese Übung ist noch nichts erfasst.</p>";
   }
