@@ -165,7 +165,7 @@ function mergeSetArrays(a, b, savedA, savedB) {
   for (let i = 0; i < n; i++) {
     const sa = aa[i];
     const sb = bb[i];
-    if (sa == null && sb == null) continue;
+    if (sa == null && sb == null) { out.push({ kg: "", reps: "", rir: "" }); continue; }
     if (sa == null) { out.push(sb); continue; }
     if (sb == null) { out.push(sa); continue; }
     const fa = setHasVal(sa);

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-08-set-fill-bg">
+<meta name="app-version" content="2026-09-08-set3-save">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -124,7 +124,8 @@ main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction
 .set.hit{background:var(--a1s)}
 .set-n{font-size:11px;color:var(--mut);font-weight:700;padding-bottom:8px}
 .set-save{width:34px;min-height:34px;border:0;border-radius:10px;background:var(--a1);color:#0E1110;
-  font-size:16px;font-weight:700;line-height:1;align-self:end;margin-bottom:1px}
+  font-size:16px;font-weight:700;line-height:1;align-self:end;margin-bottom:1px;
+  touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .set-save.done{background:var(--a1s);color:var(--a1);border:1px solid var(--a1)}
 .set-save.empty{visibility:hidden;pointer-events:none;background:transparent;border:0}
 .lbl{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}
@@ -471,11 +472,12 @@ function setHasVal(s){
 function setStamp(s, sessionSavedAt){
   return Number(s && s.savedAt) || Number(sessionSavedAt) || 0;
 }
+function emptySetSlot(){ return { kg:"", reps:"", rir:"" }; }
 function mergeSetArrays(a, b, savedA, savedB){
   var aa=a||[], bb=b||[], n=Math.max(aa.length, bb.length), out=[];
   for(var i=0;i<n;i++){
     var sa=aa[i], sb=bb[i];
-    if(sa==null && sb==null) continue;
+    if(sa==null && sb==null){ out.push(emptySetSlot()); continue; }
     if(sa==null){ out.push(sb); continue; }
     if(sb==null){ out.push(sa); continue; }
     var fa=setHasVal(sa), fb=setHasVal(sb);
@@ -623,6 +625,19 @@ function lastSetText(x, ex){
   var kg = (x.kg===""||x.kg==null||isNaN(Number(x.kg))) ? "–" : fmt(Number(x.kg));
   return reps+" "+setUnit(ex)+" × "+kg+" kg";
 }
+function lastDateAt(lp, i){
+  if(!lp) return "";
+  return (lp.dates && lp.dates[i]) || lp.date || "";
+}
+function lastLine(lp, ex){
+  if(!lp) return "Noch kein Eintrag — Startgewicht in Woche 1 finden";
+  var parts=[];
+  for(var i=0;i<lp.sets.length;i++){
+    if(setHasValue(lp.sets[i])) parts.push(lastSetText(lp.sets[i],ex));
+  }
+  if(!parts.length) return "Noch kein Eintrag — Startgewicht in Woche 1 finden";
+  return "Zuletzt "+dateShort(lp.date)+" — "+parts.join(" · ");
+}
 function dateShort(d){ var p=d.split("-"); return p[2]+"."+p[1]+"."; }
 function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function weekOf(start,date){ if(!start) return 1;
@@ -731,8 +746,16 @@ function lastByEx(){
     return da<db?-1:da>db?1:0;
   }).forEach(function(s){
     Object.keys(s.sets||{}).forEach(function(ex){
-      var valid=filledSets(s.sets[ex]);
-      if(valid.length) m[ex]={date:s.date,sets:valid};
+      var arr=s.sets[ex]||[];
+      if(!m[ex]) m[ex]={date:s.date,sets:[],dates:[]};
+      var any=false;
+      for(var i=0;i<arr.length;i++){
+        if(!setHasValue(arr[i])) continue;
+        m[ex].sets[i]=arr[i];
+        m[ex].dates[i]=s.date;
+        any=true;
+      }
+      if(any) m[ex].date=s.date;
     });
   });
   return m;
@@ -968,7 +991,7 @@ function trainingHTML(){
 
   var cards = u.ex.map(function(ex,idx){
     var meta=META[ex.id]||{}, sets=d.entries[ex.id]||[], lp=last[ex.id];
-    var warmBase = Number(sets[0]&&sets[0].kg) || (lp?Number(lp.sets[0].kg):0);
+    var warmBase = Number(sets[0]&&sets[0].kg) || (lp&&lp.sets[0]?Number(lp.sets[0].kg):0);
     var warm="";
     if(ex.warm && !meta.bw){
       warm = "<div class='warm'>Aufwärmen "+(warmBase>0
@@ -983,7 +1006,7 @@ function trainingHTML(){
         numField(setUnit(ex),s.reps,1,ex.id,i,"reps")+
         numField("kg",s.kg,meta.step||2.5,ex.id,i,"kg")+
         saveSetBtn(ex.id,i,s)+
-        prevHTML(lp&&lp.sets[i], lp&&lp.date, s, ex)+
+        prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), s, ex)+
         "</div>";
     }).join("");
     var ready = !kal && progressionReady(effectiveSets(ex),ex);
@@ -995,8 +1018,7 @@ function trainingHTML(){
       "<span>Pause "+ex.pause+"</span></div>"+
       warm+"<div class='sets'>"+rows+"</div>"+
       "<div class='ex-foot'><span class='last'>"+
-      (lp ? "Zuletzt "+dateShort(lp.date)+" — "+lp.sets.map(function(x){ return lastSetText(x,ex); }).join(" · ")
-          : "Noch kein Eintrag — Startgewicht in Woche 1 finden")+
+      lastLine(lp,ex)+
       "</span><span class='readyslot'>"+
       (ready&&meta.incr?"<span class='ready'>Nächstes Mal +"+fmt(meta.incr)+" kg"+(meta.bw?" Zusatz":"")+"</span>":"")+
       "</span></div></section>";
@@ -1026,19 +1048,21 @@ function patchTraining(){
       var und = ex.min!=null && s.reps!=="" && Number(s.reps)<ex.min;
       row.classList.toggle("hit",hit); row.classList.toggle("under",und);
       var pv=row.querySelector(".prev");
-      if(pv) pv.outerHTML = prevHTML(lp&&lp.sets[i], lp&&lp.date, s, ex);
+      if(pv) pv.outerHTML = prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), s, ex);
       var btn=row.querySelector(".set-save");
       if(btn) btn.outerHTML = saveSetBtn(ex.id,i,s);
     });
     var card=document.querySelector("[data-card='"+ex.id+"']");
     if(card){
+      var lastEl=card.querySelector(".ex-foot .last");
+      if(lastEl) lastEl.innerHTML = lastLine(lp, ex);
       var slot=card.querySelector(".readyslot");
       var ready = !kal && progressionReady(effectiveSets(ex),ex);
       if(slot) slot.innerHTML = ready&&meta.incr
         ? "<span class='ready'>Nächstes Mal +"+fmt(meta.incr)+" kg"+(meta.bw?" Zusatz":"")+"</span>" : "";
       var w=card.querySelector(".warm");
       if(w && ex.warm && !meta.bw){
-        var base=Number(sets[0]&&sets[0].kg)||(lp?Number(lp.sets[0].kg):0);
+        var base=Number(sets[0]&&sets[0].kg)||(lp&&lp.sets[0]?Number(lp.sets[0].kg):0);
         w.innerHTML = "Aufwärmen "+(base>0
           ? "<b>"+fmt(roundTo(base*0.5,meta.step))+" kg</b> × 5 &nbsp;→&nbsp; <b>"+fmt(roundTo(base*0.78,meta.step))+" kg</b> × 3"
           : "50 % × 5 → 78 % × 3, sobald ein Arbeitsgewicht steht");
@@ -1263,15 +1287,26 @@ function flushDraftFromDom(){
     var t=nodes[i], raw=t.getAttribute("data-in");
     if(!raw) continue;
     var p=raw.split("|"), ex=p[0], idx=Number(p[1]), field=p[2];
-    if(S.draft.entries[ex] && S.draft.entries[ex][idx])
-      S.draft.entries[ex][idx][field] = t.value;
+    var slot=S.draft.entries[ex] && S.draft.entries[ex][idx];
+    if(!slot) continue;
+    var next=t.value, cur=slot[field];
+    /* Fokusverlust darf einen schon eingegebenen Wert nicht leeren. */
+    if((next==="" || next==null) && cur!=="" && cur!=null) continue;
+    slot[field] = next;
   }
 }
 
 function saveSet(exId, index, silent){
-  flushDraftFromDom();
   var d=S.draft;
+  var before=d && d.entries[exId] && d.entries[exId][index]
+    ? { kg:d.entries[exId][index].kg, reps:d.entries[exId][index].reps, rir:d.entries[exId][index].rir||"" }
+    : { kg:"", reps:"", rir:"" };
+  flushDraftFromDom();
   var s=d && d.entries[exId] && d.entries[exId][index];
+  if(!s) s={ kg:"", reps:"", rir:"" };
+  if((s.kg===""||s.kg==null) && before.kg!==""&&before.kg!=null) s.kg=before.kg;
+  if((s.reps===""||s.reps==null) && before.reps!==""&&before.reps!=null) s.reps=before.reps;
+  if((s.rir===""||s.rir==null) && before.rir) s.rir=before.rir;
   if(!setFilled(s, exId)){ if(!silent) toast("Satz unvollständig"); return; }
   var now=Date.now();
   if(!S.data.startDate) S.data.startDate=d.date;
@@ -1279,7 +1314,8 @@ function saveSet(exId, index, silent){
   var existing=sessionFor(d.date, d.unitId);
   var sets=cloneSetsMap(existing && existing.sets);
   if(!sets[exId]) sets[exId]=[];
-  while(sets[exId].length<=index) sets[exId].push({kg:"",reps:"",rir:""});
+  var need=Math.max(index+1, (exById(exId)||{}).sets||0);
+  while(sets[exId].length<need) sets[exId].push({kg:"",reps:"",rir:""});
   /* Gleicher Satzindex: immer nur die zuletzt eingegebenen Wdh/kg, keine Historie. */
   sets[exId][index]={ kg:s.kg, reps:s.reps, rir:s.rir||"", savedAt:now };
   S.data.sessions=S.data.sessions.filter(function(sess){ return !(sess.date===d.date && sess.unit===d.unitId); });
@@ -1291,9 +1327,10 @@ function saveSet(exId, index, silent){
   clearDraftSet(exId, index);
   parkDraft();
   persistDrafts();
+  patchTraining();
+  if(!silent) toast("Satz gespeichert");
   persist().then(function(){
     patchTraining();
-    if(!silent) toast("Satz gespeichert");
     if(!ghReady()) return;
     return syncUp(true).catch(function(){});
   }).catch(function(e){
@@ -1323,8 +1360,18 @@ function downloadCsv(){
   }
 }
 
+document.addEventListener("pointerdown",function(ev){
+  var el=ev.target.closest && ev.target.closest("[data-saveset]");
+  if(!el) return;
+  ev.preventDefault();
+  var v=el.getAttribute("data-saveset");
+  if(!v) return;
+  var sp=v.split("|");
+  saveSet(sp[0], Number(sp[1]));
+}, true);
+
 document.addEventListener("click",function(ev){
-  var el=ev.target.closest ? ev.target.closest("[data-tab],[data-unit],[data-saveset],[data-bump],#toolsToggle,#csvBtn,#clearBtn,#exportBtn,#backupBtn,#ghToggle,#ghSave,#ghUp,#ghDown,#ghForce") : null;
+  var el=ev.target.closest ? ev.target.closest("[data-tab],[data-unit],[data-bump],#toolsToggle,#csvBtn,#clearBtn,#exportBtn,#backupBtn,#ghToggle,#ghSave,#ghUp,#ghDown,#ghForce") : null;
   if(!el) return;
 
   var v;
@@ -1332,11 +1379,6 @@ document.addEventListener("click",function(ev){
 
   if((v=el.getAttribute("data-unit"))){
     if(v!==S.draft.unitId){ showUnit(v,S.draft.stufe,S.draft.date); rememberUnit(v); saveDraftSoon(); render(); }
-    return;
-  }
-  if((v=el.getAttribute("data-saveset"))){
-    var sp=v.split("|");
-    saveSet(sp[0], Number(sp[1]));
     return;
   }
 
@@ -1463,7 +1505,8 @@ document.addEventListener("input",function(ev){
   var t=ev.target, v;
   if((v=t.getAttribute && t.getAttribute("data-in"))){
     var p=v.split("|");
-    S.draft.entries[p[0]][Number(p[1])][p[2]] = t.value;
+    if(S.draft.entries[p[0]] && S.draft.entries[p[0]][Number(p[1])])
+      S.draft.entries[p[0]][Number(p[1])][p[2]] = t.value;
     patchTraining();
     saveDraftSoon();
     return;
