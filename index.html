@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-11-align-compare">
+<meta name="app-version" content="2026-09-11-align-compare-2">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -157,8 +157,8 @@ main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction
 .ready{color:var(--a1);font-weight:700;border:1px solid var(--a1);padding:1px 8px;border-radius:999px}
 .last{min-width:0;flex:1}
 .setline{display:flex;flex-direction:column;gap:4px;width:100%}
-.setline-row{display:grid;gap:8px;align-items:baseline}
-.setline-row span{min-width:0;font-variant-numeric:tabular-nums;font-weight:700;font-size:13px}
+.setline-row{display:grid;gap:6px;align-items:baseline}
+.setline-row span{min-width:0;font-variant-numeric:tabular-nums;font-weight:700;font-size:12.5px;white-space:nowrap}
 .setline-row.max span{color:var(--warn)}
 .setline-row.today span{color:#7EB8F5}
 .lastval{color:var(--warn);font-weight:700;font-size:14px}
@@ -252,6 +252,8 @@ td.k{width:74px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color
   .step{width:34px;min-height:34px;font-size:18px}
   .prev{margin-top:4px;padding-top:8px;font-size:12px}
   .ex-foot{padding:11px 14px 13px;font-size:12px}
+  .setline-row{gap:4px}
+  .setline-row span{font-size:11.5px}
   .btn.main{width:100%;font-size:16px}
   .stats{gap:8px}
   .stat{min-width:calc(50% - 4px);padding:12px;border-radius:16px}
