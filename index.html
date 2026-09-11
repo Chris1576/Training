@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-08-no-prio">
+<meta name="app-version" content="2026-09-11-max-today">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -134,12 +134,19 @@ main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction
 .numrow input::-webkit-outer-spin-button,.numrow input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .step{width:34px;min-height:34px;border:0;background:#232927;color:var(--ink);font-size:18px;line-height:1}
 
-.prev{grid-column:1/-1;width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;
+.prev{grid-column:1/-1;width:100%;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap;
   margin-top:7px;padding-top:6px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--mut)}
 .prev.none{justify-content:flex-start;font-style:italic;opacity:.75}
-.prevval b{color:var(--warn);font-weight:700;font-size:14px}
-.prevlbl{display:inline-block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-right:6px}
-.chips{display:flex;gap:5px;flex-wrap:wrap}
+.prev-side{display:flex;flex-direction:column;gap:2px;min-width:0}
+.prev-side.today{align-items:flex-end;text-align:right;margin-left:auto}
+.prevval{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.prevval.max b{color:var(--warn);font-weight:700;font-size:14px}
+.prevval.today b{color:#7EB8F5;font-weight:700;font-size:14px}
+.prevlbl{display:inline-block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.prstar{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;
+  border-radius:999px;background:var(--a1s);border:1px solid var(--a1);color:var(--a1);
+  font-size:11px;line-height:1;margin-left:2px}
+.chips{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
 .chip{border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:10.5px;font-variant-numeric:tabular-nums}
 .chip.up{color:var(--a1);border-color:var(--a1)}
 .chip.down{color:var(--warn);border-color:var(--warn)}
@@ -149,6 +156,7 @@ main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction
   border-top:1px solid var(--line2);font-size:11.5px;color:var(--mut);flex-wrap:wrap}
 .ready{color:var(--a1);font-weight:700;border:1px solid var(--a1);padding:1px 8px;border-radius:999px}
 .lastval{color:var(--warn);font-weight:700;font-size:14px}
+.todayval{color:#7EB8F5;font-weight:700;font-size:14px}
 
 .btn{border:1px solid var(--line);background:var(--sunk);padding:12px 16px;font-size:15px;color:var(--ink);
   border-radius:12px;min-height:44px}
@@ -642,14 +650,23 @@ function lastDateAt(lp, i){
   if(!lp) return "";
   return (lp.dates && lp.dates[i]) || lp.date || "";
 }
-function lastLine(lp, ex){
-  if(!lp) return "Noch kein Eintrag — Startgewicht in Woche 1 finden";
-  var parts=[];
-  for(var i=0;i<lp.sets.length;i++){
-    if(setHasValue(lp.sets[i])) parts.push(lastSetText(lp.sets[i],ex));
+function lastLine(lp, todayEx, ex){
+  var maxParts=[], todayParts=[];
+  if(lp){
+    for(var i=0;i<lp.sets.length;i++){
+      if(setHasValue(lp.sets[i])) maxParts.push(lastSetText(lp.sets[i],ex));
+    }
   }
-  if(!parts.length) return "Noch kein Eintrag — Startgewicht in Woche 1 finden";
-  return "Zuletzt "+dateShort(lp.date)+" — "+parts.join(" · ");
+  if(todayEx){
+    for(var j=0;j<(todayEx.sets||[]).length;j++){
+      if(setHasValue(todayEx.sets[j])) todayParts.push(lastSetText(todayEx.sets[j],ex));
+    }
+  }
+  if(!maxParts.length && !todayParts.length) return "Noch kein Eintrag — Startgewicht in Woche 1 finden";
+  var out="";
+  if(maxParts.length) out += "<span class='prevlbl'>Max</span> <span class='lastval'>"+maxParts.join(" · ")+"</span>";
+  if(todayParts.length) out += (out?"<br>":"")+"<span class='prevlbl'>Heute</span> <span class='todayval'>"+todayParts.join(" · ")+"</span>";
+  return out;
 }
 function dateShort(d){ var p=d.split("-"); return p[2]+"."+p[1]+"."; }
 function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
@@ -750,25 +767,58 @@ function setFilled(s, exId){
   return hasKg && hasReps;
 }
 
-function lastByEx(){
+/* A besser als B: mehr kg, bei gleichem Gewicht mehr Wiederholungen. */
+function isBetterSet(a, b){
+  if(!setHasValue(a)) return false;
+  if(!setHasValue(b)) return true;
+  var aKg=Number(a.kg)||0, bKg=Number(b.kg)||0;
+  if(aKg!==bKg) return aKg>bKg;
+  return (Number(a.reps)||0)>(Number(b.reps)||0);
+}
+function topSetOf(sets){
+  var best=null;
+  (sets||[]).forEach(function(x){
+    if(isBetterSet(x, best)) best=x;
+  });
+  return best;
+}
+/* Maximalwerte je Uebung/Satz — ohne den aktuellen Tag, damit Gelb erst morgen wechselt. */
+function maxByEx(beforeDate){
   var m={};
   S.data.sessions.slice().sort(function(a,b){
-    var sa=a.savedAt||0, sb=b.savedAt||0;
-    if(sa!==sb) return sa-sb;
     var da=a.date||"", db=b.date||"";
-    return da<db?-1:da>db?1:0;
+    if(da!==db) return da<db?-1:1;
+    return (a.savedAt||0)-(b.savedAt||0);
   }).forEach(function(s){
+    if(beforeDate && s.date>=beforeDate) return;
     Object.keys(s.sets||{}).forEach(function(ex){
       var arr=s.sets[ex]||[];
-      if(!m[ex]) m[ex]={date:s.date,sets:[],dates:[]};
+      if(!m[ex]) m[ex]={date:"",sets:[],dates:[]};
       var any=false;
       for(var i=0;i<arr.length;i++){
         if(!setHasValue(arr[i])) continue;
+        if(!isBetterSet(arr[i], m[ex].sets[i])) continue;
         m[ex].sets[i]=arr[i];
         m[ex].dates[i]=s.date;
         any=true;
       }
       if(any) m[ex].date=s.date;
+    });
+  });
+  return m;
+}
+function todayByEx(date){
+  var m={};
+  (S.data.sessions||[]).forEach(function(s){
+    if(s.date!==date) return;
+    Object.keys(s.sets||{}).forEach(function(ex){
+      var arr=s.sets[ex]||[];
+      if(!m[ex]) m[ex]={date:s.date,sets:[],dates:[]};
+      for(var i=0;i<arr.length;i++){
+        if(!setHasValue(arr[i])) continue;
+        m[ex].sets[i]=arr[i];
+        m[ex].dates[i]=s.date;
+      }
     });
   });
   return m;
@@ -970,29 +1020,40 @@ function unitPick(sel,action){
   }).join("")+"</div>";
 }
 
-function prevHTML(prev,prevDate,cur,ex){
-  if(!prev) return "<div class='prev none'>Kein Vergleichswert — dieser Satz ist neu</div>";
-  var pKg=Number(prev.kg), pReps=Number(prev.reps);
-  var cKg = cur.kg===""?null:Number(cur.kg), cReps = cur.reps===""?null:Number(cur.reps);
-  var unit=setUnit(ex), chips="";
-  if(cReps!==null && !isNaN(pReps)){
-    var r=cReps-pReps;
-    chips += "<span class='chip "+(r>0?"up":r<0?"down":"same")+"'>"+
-      (r===0?unit+" gleich":(r>0?"+":"−")+Math.abs(r)+" "+unit)+"</span>";
+function prevHTML(prev,prevDate,todaySaved,cur,ex){
+  var today = (todaySaved && setHasValue(todaySaved)) ? todaySaved : (setHasValue(cur) ? cur : null);
+  if(!prev && !today) return "<div class='prev none'>Kein Vergleichswert — dieser Satz ist neu</div>";
+
+  var unit=setUnit(ex), chips="", star="";
+  if(prev && today){
+    var pKg=Number(prev.kg), pReps=Number(prev.reps);
+    var cKg = today.kg===""||today.kg==null?null:Number(today.kg);
+    var cReps = today.reps===""||today.reps==null?null:Number(today.reps);
+    if(cReps!==null && !isNaN(pReps)){
+      var r=cReps-pReps;
+      chips += "<span class='chip "+(r>0?"up":r<0?"down":"same")+"'>"+
+        (r===0?unit+" gleich":(r>0?"+":"−")+Math.abs(r)+" "+unit)+"</span>";
+    }
+    if(cKg!==null && !isNaN(pKg)){
+      var d=Math.round((cKg-pKg)*100)/100;
+      chips += "<span class='chip "+(d>0?"up":d<0?"down":"same")+"'>"+
+        (d===0?"Gewicht gleich":(d>0?"+":"−")+fmt(Math.abs(d))+" kg")+"</span>";
+    }
+    if(isBetterSet(today, prev)) star = "<span class='prstar' title='Neuer Bestwert'>★</span>";
   }
-  if(cKg!==null && !isNaN(pKg)){
-    var d=Math.round((cKg-pKg)*100)/100;
-    chips += "<span class='chip "+(d>0?"up":d<0?"down":"same")+"'>"+
-      (d===0?"Gewicht gleich":(d>0?"+":"−")+fmt(Math.abs(d))+" kg")+"</span>";
-  }
-  return "<div class='prev'><span class='prevval'>"+
-    "<span class='prevlbl'>"+(prevDate?dateShort(prevDate):"zuletzt")+"</span>"+
-    "<b class='mono'>"+lastSetText(prev,ex)+"</b>"+
-    "</span><span class='chips'>"+chips+"</span></div>";
+
+  var left = "<div class='prev-side'><span class='prevval max'>"+
+    "<span class='prevlbl'>Max"+(prevDate?" "+dateShort(prevDate):"")+"</span>"+
+    "<b class='mono'>"+(prev?lastSetText(prev,ex):"–")+"</b></span></div>";
+  var right = "<div class='prev-side today'><span class='prevval today'>"+
+    "<span class='prevlbl'>Heute</span>"+
+    "<b class='mono'>"+(today?lastSetText(today,ex):"–")+"</b>"+star+"</span>"+
+    (chips?"<span class='chips'>"+chips+"</span>":"")+"</div>";
+  return "<div class='prev'>"+left+right+"</div>";
 }
 
 function trainingHTML(){
-  var d=S.draft, u=unitById(d.unitId), last=lastByEx();
+  var d=S.draft, u=unitById(d.unitId), last=maxByEx(d.date), todaySets=todayByEx(d.date);
   var week = weekOf(S.data.startDate, d.date);
   var kal = !S.data.startDate || week===1;
 
@@ -1004,7 +1065,7 @@ function trainingHTML(){
   if(kal) notes += "<div class='note'><b>Woche 1 — Kalibrierung.</b> Einziges Ziel ist das Finden der Arbeitsgewichte, nicht die Auslastung.</div>";
 
   var cards = u.ex.map(function(ex,idx){
-    var meta=META[ex.id]||{}, sets=d.entries[ex.id]||[], lp=last[ex.id];
+    var meta=META[ex.id]||{}, sets=d.entries[ex.id]||[], lp=last[ex.id], td=todaySets[ex.id];
     var warmBase = Number(sets[0]&&sets[0].kg) || (lp&&lp.sets[0]?Number(lp.sets[0].kg):0);
     var warm="";
     if(ex.warm && !meta.bw){
@@ -1020,7 +1081,7 @@ function trainingHTML(){
         numField(setUnit(ex),s.reps,1,ex.id,i,"reps")+
         numField("kg",s.kg,meta.step||2.5,ex.id,i,"kg")+
         saveSetBtn(ex.id,i,s)+
-        prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), s, ex)+
+        prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), td&&td.sets[i], s, ex)+
         "</div>";
     }).join("");
     var ready = !kal && progressionReady(effectiveSets(ex),ex);
@@ -1031,7 +1092,7 @@ function trainingHTML(){
       "<span>Pause "+ex.pause+"</span></div>"+
       warm+"<div class='sets'>"+rows+"</div>"+
       "<div class='ex-foot'><span class='last'>"+
-      lastLine(lp,ex)+
+      lastLine(lp,td,ex)+
       "</span><span class='readyslot'>"+
       (ready&&meta.incr?"<span class='ready'>Nächstes Mal +"+fmt(meta.incr)+" kg"+(meta.bw?" Zusatz":"")+"</span>":"")+
       "</span></div></section>";
@@ -1050,10 +1111,10 @@ function numField(label,value,step,exId,i,field){
 
 /* Gezielte Aktualisierung ohne Neuaufbau (Fokus bleibt im Feld) */
 function patchTraining(){
-  var d=S.draft, u=unitById(d.unitId), last=lastByEx();
+  var d=S.draft, u=unitById(d.unitId), last=maxByEx(d.date), todaySets=todayByEx(d.date);
   var kal = !S.data.startDate || weekOf(S.data.startDate,d.date)===1;
   u.ex.forEach(function(ex){
-    var sets=d.entries[ex.id]||[], lp=last[ex.id], meta=META[ex.id]||{};
+    var sets=d.entries[ex.id]||[], lp=last[ex.id], td=todaySets[ex.id], meta=META[ex.id]||{};
     sets.forEach(function(s,i){
       var row=document.querySelector("[data-row='"+ex.id+"|"+i+"']");
       if(!row) return;
@@ -1061,14 +1122,14 @@ function patchTraining(){
       var und = ex.min!=null && s.reps!=="" && Number(s.reps)<ex.min;
       row.classList.toggle("hit",hit); row.classList.toggle("under",und);
       var pv=row.querySelector(".prev");
-      if(pv) pv.outerHTML = prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), s, ex);
+      if(pv) pv.outerHTML = prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), td&&td.sets[i], s, ex);
       var btn=row.querySelector(".set-save");
       if(btn) btn.outerHTML = saveSetBtn(ex.id,i,s);
     });
     var card=document.querySelector("[data-card='"+ex.id+"']");
     if(card){
       var lastEl=card.querySelector(".ex-foot .last");
-      if(lastEl) lastEl.innerHTML = lastLine(lp, ex);
+      if(lastEl) lastEl.innerHTML = lastLine(lp, td, ex);
       var slot=card.querySelector(".readyslot");
       var ready = !kal && progressionReady(effectiveSets(ex),ex);
       if(slot) slot.innerHTML = ready&&meta.incr
@@ -1092,25 +1153,39 @@ function allExIds(){
 }
 
 function sparkline(series){
-  if(series.length<2) return "<p class='p mut'>Ab der zweiten Einheit erscheint hier die Kurve.</p>";
+  if(series.length<2) return "<p class='p mut'>Ab der zweiten Einheit erscheint hier die Kurve — auch wenn das Gewicht oder die Wiederholungen sinken.</p>";
   var W=300,H=110,pad=6;
-  var vals=series.map(function(p){ return p.kg; });
+  var useKg=series.some(function(p){ return p.kg>0; });
+  var vals=series.map(function(p){ return useKg?p.kg:p.reps; });
   var mn=Math.min.apply(null,vals), mx=Math.max.apply(null,vals);
   if(mx===mn){ mx=mn+1; mn=mn-1; }
   var pts=series.map(function(p,i){
+    var v=vals[i];
     var x=pad+i*(W-2*pad)/(series.length-1);
-    var y=H-pad-(p.kg-mn)/(mx-mn)*(H-2*pad);
+    var y=H-pad-(v-mn)/(mx-mn)*(H-2*pad);
     return [x,y];
   });
-  var line=pts.map(function(p){ return p[0].toFixed(1)+","+p[1].toFixed(1); }).join(" ");
-  var dots=pts.map(function(p){ return "<circle cx='"+p[0].toFixed(1)+"' cy='"+p[1].toFixed(1)+"' r='3' fill='#4FC8B4'/>"; }).join("");
+  var segs="";
+  for(var i=1;i<pts.length;i++){
+    var up=vals[i]>vals[i-1], down=vals[i]<vals[i-1];
+    var col=up?"#4FC8B4":down?"#D9A63C":"#8B948E";
+    segs += "<line x1='"+pts[i-1][0].toFixed(1)+"' y1='"+pts[i-1][1].toFixed(1)+
+      "' x2='"+pts[i][0].toFixed(1)+"' y2='"+pts[i][1].toFixed(1)+"' stroke='"+col+"' stroke-width='2'/>";
+  }
+  var dots=pts.map(function(p,i){
+    var col="#8B948E";
+    if(i>0) col = vals[i]>vals[i-1]?"#4FC8B4":vals[i]<vals[i-1]?"#D9A63C":"#8B948E";
+    return "<circle cx='"+p[0].toFixed(1)+"' cy='"+p[1].toFixed(1)+"' r='3' fill='"+col+"'/>";
+  }).join("");
   var grid=[0,0.5,1].map(function(f){ var y=pad+f*(H-2*pad);
     return "<line x1='"+pad+"' y1='"+y+"' x2='"+(W-pad)+"' y2='"+y+"' stroke='#2B322E' stroke-dasharray='2 4'/>"; }).join("");
+  function tip(p){ return p.datum+" · "+fmt(p.kg)+" kg × "+(p.reps||"–"); }
   return "<div class='chartwrap'><svg viewBox='0 0 "+W+" "+H+"' width='100%' height='150' preserveAspectRatio='none'>"+
-    grid+"<polyline points='"+line+"' fill='none' stroke='#4FC8B4' stroke-width='2'/>"+dots+"</svg>"+
+    grid+segs+dots+"</svg>"+
     "<div class='row' style='justify-content:space-between;font-size:11px;color:var(--mut);margin-top:4px'>"+
-    "<span>"+series[0].datum+" · "+fmt(series[0].kg)+" kg</span>"+
-    "<span>"+series[series.length-1].datum+" · "+fmt(series[series.length-1].kg)+" kg</span></div></div>";
+    "<span>"+tip(series[0])+"</span>"+
+    "<span>"+tip(series[series.length-1])+"</span></div>"+
+    "<p class='p mut' style='margin:6px 0 0'>Jede Einheit zählt — Grün steigend, Gelb rückläufig.</p></div>";
 }
 
 function verlaufHTML(){
@@ -1133,8 +1208,13 @@ function verlaufHTML(){
   sessions.forEach(function(s){
     var sets=filledSets(s.sets && s.sets[exId]);
     if(!sets.length) return;
-    var top=Math.max.apply(null,sets.map(function(x){ return Number(x.kg)||0; }));
-    series.push({datum:dateShort(s.date),date:s.date,kg:top,ton:Math.round(tonnage(sets)),sets:sets,week:s.week});
+    var best=topSetOf(sets);
+    series.push({
+      datum:dateShort(s.date),date:s.date,
+      kg:Number(best&&best.kg)||0,
+      reps:Number(best&&best.reps)||0,
+      ton:Math.round(tonnage(sets)),sets:sets,week:s.week
+    });
   });
   var totalTon=0;
   sessions.forEach(function(s){ Object.keys(s.sets).forEach(function(k){ totalTon+=tonnage(s.sets[k]); }); });
@@ -1159,10 +1239,20 @@ function verlaufHTML(){
   var body;
   if(series.length){
     var rows=series.slice().reverse().map(function(p,ri){
+      var prevP=series[series.length-2-ri];
       var setsHtml = filledSets(p.sets).map(function(x){ return lastSetText(x, exById(exId)); }).join(" · ");
+      var delta="";
+      if(prevP){
+        var dKg=Math.round((p.kg-prevP.kg)*100)/100;
+        var dR=p.reps-prevP.reps;
+        var unit=setUnit(exById(exId));
+        if(dR) delta += "<span class='chip "+(dR>0?"up":"down")+"'>"+(dR>0?"+":"−")+Math.abs(dR)+" "+unit+"</span>";
+        if(dKg) delta += "<span class='chip "+(dKg>0?"up":"down")+"'>"+(dKg>0?"+":"−")+fmt(Math.abs(dKg))+" kg</span>";
+        if(!dKg && !dR) delta += "<span class='chip same'>gleich</span>";
+      }
       if(ri===0) setsHtml = "<span class='lastval'>"+setsHtml+"</span>";
       return "<tr><td>"+p.datum+"</td><td class='mut'>"+(p.week||"–")+"</td><td class='mono'>"+
-        setsHtml+
+        setsHtml+(delta?" <span class='chips' style='display:inline-flex;margin-left:6px'>"+delta+"</span>":"")+
         "</td><td class='r mono'>"+p.ton+"</td></tr>";
     }).join("");
     var curWeek=weekOf(S.data.startDate,today());
