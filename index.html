@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-11-blue-today-only">
+<meta name="app-version" content="2026-09-11-last-save">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -494,6 +494,12 @@ function setHasVal(s){
 function setStamp(s, sessionSavedAt){
   return Number(s && s.savedAt) || Number(sessionSavedAt) || 0;
 }
+function newerSet(a, b, savedA, savedB){
+  if(!setHasVal(a) && !setHasVal(b)) return a||b||emptySetSlot();
+  if(!setHasVal(a)) return b;
+  if(!setHasVal(b)) return a;
+  return setStamp(a,savedA)>=setStamp(b,savedB) ? a : b;
+}
 function emptySetSlot(){ return { kg:"", reps:"", rir:"" }; }
 function mergeSetArrays(a, b, savedA, savedB){
   var aa=a||[], bb=b||[], n=Math.max(aa.length, bb.length), out=[];
@@ -790,9 +796,10 @@ function topSetOf(sets){
   });
   return best;
 }
-/* Maximalwerte je Uebung/Satz — ohne den aktuellen Tag, damit Gelb erst morgen wechselt. */
+/* Maximalwerte je Uebung/Satz — ohne den aktuellen Tag, damit Gelb erst morgen wechselt.
+   Pro Tag zaehlt nur der zuletzt gespeicherte Satz, nicht ein korrigierter Irrtum. */
 function maxByEx(beforeDate){
-  var m={};
+  var daily={};
   S.data.sessions.slice().sort(function(a,b){
     var da=a.date||"", db=b.date||"";
     if(da!==db) return da<db?-1:1;
@@ -801,16 +808,31 @@ function maxByEx(beforeDate){
     if(beforeDate && s.date>=beforeDate) return;
     Object.keys(s.sets||{}).forEach(function(ex){
       var arr=s.sets[ex]||[];
-      if(!m[ex]) m[ex]={date:"",sets:[],dates:[]};
-      var any=false;
+      if(!daily[s.date]) daily[s.date]={};
+      if(!daily[s.date][ex]) daily[s.date][ex]={sets:[],dates:[]};
+      var slot=daily[s.date][ex];
       for(var i=0;i<arr.length;i++){
         if(!setHasValue(arr[i])) continue;
-        if(!isBetterSet(arr[i], m[ex].sets[i])) continue;
-        m[ex].sets[i]=arr[i];
-        m[ex].dates[i]=s.date;
+        var cur=slot.sets[i];
+        if(cur && setStamp(arr[i], s.savedAt)<setStamp(cur,0)) continue;
+        slot.sets[i]=arr[i];
+        slot.dates[i]=s.date;
+      }
+    });
+  });
+  var m={};
+  Object.keys(daily).sort().forEach(function(date){
+    Object.keys(daily[date]).forEach(function(ex){
+      if(!m[ex]) m[ex]={date:"",sets:[],dates:[]};
+      var slot=daily[date][ex], any=false;
+      for(var i=0;i<slot.sets.length;i++){
+        if(!setHasValue(slot.sets[i])) continue;
+        if(!isBetterSet(slot.sets[i], m[ex].sets[i])) continue;
+        m[ex].sets[i]=slot.sets[i];
+        m[ex].dates[i]=slot.dates[i];
         any=true;
       }
-      if(any) m[ex].date=s.date;
+      if(any) m[ex].date=date;
     });
   });
   return m;
@@ -825,6 +847,8 @@ function todayByEx(date, unitId){
       if(!m[ex]) m[ex]={date:s.date,sets:[],dates:[]};
       for(var i=0;i<arr.length;i++){
         if(!setHasValue(arr[i])) continue;
+        var cur=m[ex].sets[i];
+        if(cur && setStamp(arr[i], s.savedAt)<setStamp(cur,0)) continue;
         m[ex].sets[i]=arr[i];
         m[ex].dates[i]=s.date;
       }
@@ -1213,17 +1237,23 @@ function verlaufHTML(){
   }
   var exId=S.verlaufEx;
   var series=[];
+  var byDate={};
   sessions.forEach(function(s){
     var sets=filledSets(s.sets && s.sets[exId]);
     if(!sets.length) return;
+    var stamp=s.savedAt||0;
+    sets.forEach(function(x){ if((x.savedAt||0)>stamp) stamp=x.savedAt; });
+    var prev=byDate[s.date];
+    if(prev && (prev.stamp||0)>stamp) return;
     var best=topSetOf(sets);
-    series.push({
+    byDate[s.date]={
       datum:dateShort(s.date),date:s.date,
       kg:Number(best&&best.kg)||0,
       reps:Number(best&&best.reps)||0,
-      ton:Math.round(tonnage(sets)),sets:sets,week:s.week
-    });
+      ton:Math.round(tonnage(sets)),sets:sets,week:s.week,stamp:stamp
+    };
   });
+  series=Object.keys(byDate).sort().map(function(d){ return byDate[d]; });
   var totalTon=0;
   sessions.forEach(function(s){ Object.keys(s.sets).forEach(function(k){ totalTon+=tonnage(s.sets[k]); }); });
   var lastS=sessions[sessions.length-1];
@@ -1463,8 +1493,12 @@ function writeSetIntoSession(date, unitId, stufe, exId, index, written){
 var _lastSaveAt=0;
 var _pendingSaved=[];
 var _saveLock={};
+function pendingKey(p){ return [p.date,p.unit,p.ex,p.index].join("|"); }
 function rememberPending(date, unitId, exId, index, set){
-  _pendingSaved.push({date:date,unit:unitId,ex:exId,index:index,set:set,until:Date.now()+120000});
+  var next={date:date,unit:unitId,ex:exId,index:index,set:set,until:Date.now()+120000};
+  var k=pendingKey(next);
+  _pendingSaved=_pendingSaved.filter(function(p){ return pendingKey(p)!==k; });
+  _pendingSaved.push(next);
 }
 function reapplyPending(){
   var now=Date.now();
@@ -1473,6 +1507,7 @@ function reapplyPending(){
     var sess=sessionFor(p.date, p.unit);
     var got=sess && sess.sets && sess.sets[p.ex] && sess.sets[p.ex][p.index];
     if(setMatchesSaved(p.set, got)) return;
+    if(setHasValue(got) && setStamp(got, sess&&sess.savedAt)>=setStamp(p.set,0)) return;
     writeSetIntoSession(p.date, p.unit, (sess&&sess.stufe)||(S.draft&&S.draft.stufe)||"A", p.ex, p.index, p.set);
   });
 }
