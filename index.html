@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-11-no-next-kg">
+<meta name="app-version" content="2026-09-11-blue-today-only">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -815,10 +815,11 @@ function maxByEx(beforeDate){
   });
   return m;
 }
-function todayByEx(date){
+function todayByEx(date, unitId){
   var m={};
   (S.data.sessions||[]).forEach(function(s){
     if(s.date!==date) return;
+    if(unitId && s.unit!==unitId) return;
     Object.keys(s.sets||{}).forEach(function(ex){
       var arr=s.sets[ex]||[];
       if(!m[ex]) m[ex]={date:s.date,sets:[],dates:[]};
@@ -830,6 +831,17 @@ function todayByEx(date){
     });
   });
   return m;
+}
+/* Blau nur am echten heutigen Kalendertag und nur in der Einheit von heute. */
+function viewingToday(date){ return date===today(); }
+function liveTodaySets(date, unitId){
+  return viewingToday(date) ? todayByEx(date, unitId) : {};
+}
+function todayOrDraft(saved, draft, showToday){
+  if(!showToday) return null;
+  if(saved && setHasValue(saved)) return saved;
+  if(setHasValue(draft)) return draft;
+  return null;
 }
 
 function draftKey(date, unitId){ return (date||"")+"|"+(unitId||""); }
@@ -1019,8 +1031,8 @@ function unitPick(sel,action){
   }).join("")+"</div>";
 }
 
-function prevHTML(prev,prevDate,todaySaved,cur,ex){
-  var today = (todaySaved && setHasValue(todaySaved)) ? todaySaved : (setHasValue(cur) ? cur : null);
+function prevHTML(prev,prevDate,todaySet,ex){
+  var today=todaySet;
   if(!prev && !today) return "<div class='prev none'>Kein Vergleichswert — dieser Satz ist neu</div>";
 
   var unit=setUnit(ex), chips="", star="";
@@ -1041,18 +1053,22 @@ function prevHTML(prev,prevDate,todaySaved,cur,ex){
     if(isBetterSet(today, prev)) star = "<span class='prstar' title='Neuer Bestwert'>★</span>";
   }
 
-  var left = "<span class='prevval max'>"+
-    (prevDate?"<span class='prevlbl'>"+dateShort(prevDate)+"</span>":"")+
-    "<b class='mono'>"+(prev?lastSetText(prev,ex):"–")+"</b></span>";
-  var right = "<span class='prevval today'>"+
-    "<b class='mono'>"+(today?lastSetText(today,ex):"–")+"</b>"+star+"</span>";
+  var left = prev
+    ? "<span class='prevval max'>"+
+      (prevDate?"<span class='prevlbl'>"+dateShort(prevDate)+"</span>":"")+
+      "<b class='mono'>"+lastSetText(prev,ex)+"</b></span>"
+    : "<span class='prevval max'><b class='mono'>–</b></span>";
+  var right = today
+    ? "<span class='prevval today'><b class='mono'>"+lastSetText(today,ex)+"</b>"+star+"</span>"
+    : "";
   return "<div class='prev'>"+
     (chips?"<span class='chips'>"+chips+"</span>":"")+
     "<div class='prev-row'>"+left+right+"</div></div>";
 }
 
 function trainingHTML(){
-  var d=S.draft, u=unitById(d.unitId), last=maxByEx(d.date), todaySets=todayByEx(d.date);
+  var d=S.draft, u=unitById(d.unitId), showToday=viewingToday(d.date);
+  var last=maxByEx(today()), todaySets=liveTodaySets(d.date, d.unitId);
   var week = weekOf(S.data.startDate, d.date);
   var kal = !S.data.startDate || week===1;
 
@@ -1080,7 +1096,7 @@ function trainingHTML(){
         numField(setUnit(ex),s.reps,1,ex.id,i,"reps")+
         numField("kg",s.kg,meta.step||2.5,ex.id,i,"kg")+
         saveSetBtn(ex.id,i,s)+
-        prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), td&&td.sets[i], s, ex)+
+        prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), todayOrDraft(td&&td.sets[i], s, showToday), ex)+
         "</div>";
     }).join("");
     return "<section class='ex "+u.accent+"' data-card='"+ex.id+"'>"+
@@ -1090,7 +1106,7 @@ function trainingHTML(){
       "<span>Pause "+ex.pause+"</span></div>"+
       warm+"<div class='sets'>"+rows+"</div>"+
       "<div class='ex-foot'><span class='last'>"+
-      lastLine(lp,td,ex)+
+      lastLine(lp, showToday?td:null, ex)+
       "</span></div></section>";
   }).join("");
 
@@ -1107,7 +1123,8 @@ function numField(label,value,step,exId,i,field){
 
 /* Gezielte Aktualisierung ohne Neuaufbau (Fokus bleibt im Feld) */
 function patchTraining(){
-  var d=S.draft, u=unitById(d.unitId), last=maxByEx(d.date), todaySets=todayByEx(d.date);
+  var d=S.draft, u=unitById(d.unitId), showToday=viewingToday(d.date);
+  var last=maxByEx(today()), todaySets=liveTodaySets(d.date, d.unitId);
   u.ex.forEach(function(ex){
     var sets=d.entries[ex.id]||[], lp=last[ex.id], td=todaySets[ex.id], meta=META[ex.id]||{};
     sets.forEach(function(s,i){
@@ -1117,14 +1134,14 @@ function patchTraining(){
       var und = ex.min!=null && s.reps!=="" && Number(s.reps)<ex.min;
       row.classList.toggle("hit",hit); row.classList.toggle("under",und);
       var pv=row.querySelector(".prev");
-      if(pv) pv.outerHTML = prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), td&&td.sets[i], s, ex);
+      if(pv) pv.outerHTML = prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), todayOrDraft(td&&td.sets[i], s, showToday), ex);
       var btn=row.querySelector(".set-save");
       if(btn) btn.outerHTML = saveSetBtn(ex.id,i,s);
     });
     var card=document.querySelector("[data-card='"+ex.id+"']");
     if(card){
       var lastEl=card.querySelector(".ex-foot .last");
-      if(lastEl) lastEl.innerHTML = lastLine(lp, td, ex);
+      if(lastEl) lastEl.innerHTML = lastLine(lp, showToday?td:null, ex);
       var w=card.querySelector(".warm");
       if(w && ex.warm && !meta.bw){
         var base=Number(sets[0]&&sets[0].kg)||(lp&&lp.sets[0]?Number(lp.sets[0].kg):0);
