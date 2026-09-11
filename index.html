@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-11-align-compare-2">
+<meta name="app-version" content="2026-09-11-no-next-kg">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -154,7 +154,6 @@ main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction
 
 .ex-foot{display:flex;justify-content:space-between;gap:10px;padding:9px 14px 11px;
   border-top:1px solid var(--line2);font-size:11.5px;color:var(--mut);flex-wrap:wrap}
-.ready{color:var(--a1);font-weight:700;border:1px solid var(--a1);padding:1px 8px;border-radius:999px}
 .last{min-width:0;flex:1}
 .setline{display:flex;flex-direction:column;gap:4px;width:100%}
 .setline-row{display:grid;gap:6px;align-items:baseline}
@@ -740,13 +739,6 @@ function weekTonnageForEx(sessions, exId){
   return Object.keys(map).map(Number).sort(function(a,b){ return a-b; }).map(function(w){ return map[w]; });
 }
 
-function progressionReady(sets,ex){
-  if(ex.max==null) return false;
-  var done=(sets||[]).filter(function(s){ return s.reps!=="" && s.kg!==""; });
-  if(done.length<ex.sets) return false;
-  return done.every(function(s){ return Number(s.reps)>=ex.max; });
-}
-
 function toast(msg){
   var t=document.getElementById("toast");
   t.textContent=msg; t.classList.add("on");
@@ -946,15 +938,6 @@ function saveSetBtn(exId, i, s){
   if(!setFilled(s, exId)) return "<span class='set-save empty' aria-hidden='true'>✓</span>";
   return "<button class='set-save' data-saveset='"+exId+"|"+i+"' aria-label='Satz speichern'>✓</button>";
 }
-function effectiveSets(ex){
-  var draft=(S.draft && S.draft.entries[ex.id])||[];
-  var saved=((S.draft && sessionFor(S.draft.date, S.draft.unitId)||{}).sets||{})[ex.id]||[];
-  var out=[];
-  for(var i=0;i<ex.sets;i++){
-    out.push(setFilled(draft[i], ex.id) ? draft[i] : (saved[i]||draft[i]||{kg:"",reps:"",rir:""}));
-  }
-  return out;
-}
 function clearDraftSet(exId, index){
   if(!S.draft || !S.draft.entries[exId] || !S.draft.entries[exId][index]) return;
   S.draft.entries[exId][index]={ kg:"", reps:"", rir:"" };
@@ -1100,7 +1083,6 @@ function trainingHTML(){
         prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), td&&td.sets[i], s, ex)+
         "</div>";
     }).join("");
-    var ready = !kal && progressionReady(effectiveSets(ex),ex);
     return "<section class='ex "+u.accent+"' data-card='"+ex.id+"'>"+
       "<div class='ex-head'><span class='ex-idx'>"+(idx+1)+"</span>"+
       "<div class='ex-name'>"+esc(ex.name)+(ex.hint?" <i>"+esc(ex.hint)+"</i>":"")+"</div></div>"+
@@ -1109,8 +1091,6 @@ function trainingHTML(){
       warm+"<div class='sets'>"+rows+"</div>"+
       "<div class='ex-foot'><span class='last'>"+
       lastLine(lp,td,ex)+
-      "</span><span class='readyslot'>"+
-      (ready&&meta.incr?"<span class='ready'>Nächstes Mal +"+fmt(meta.incr)+" kg"+(meta.bw?" Zusatz":"")+"</span>":"")+
       "</span></div></section>";
   }).join("");
 
@@ -1128,7 +1108,6 @@ function numField(label,value,step,exId,i,field){
 /* Gezielte Aktualisierung ohne Neuaufbau (Fokus bleibt im Feld) */
 function patchTraining(){
   var d=S.draft, u=unitById(d.unitId), last=maxByEx(d.date), todaySets=todayByEx(d.date);
-  var kal = !S.data.startDate || weekOf(S.data.startDate,d.date)===1;
   u.ex.forEach(function(ex){
     var sets=d.entries[ex.id]||[], lp=last[ex.id], td=todaySets[ex.id], meta=META[ex.id]||{};
     sets.forEach(function(s,i){
@@ -1146,10 +1125,6 @@ function patchTraining(){
     if(card){
       var lastEl=card.querySelector(".ex-foot .last");
       if(lastEl) lastEl.innerHTML = lastLine(lp, td, ex);
-      var slot=card.querySelector(".readyslot");
-      var ready = !kal && progressionReady(effectiveSets(ex),ex);
-      if(slot) slot.innerHTML = ready&&meta.incr
-        ? "<span class='ready'>Nächstes Mal +"+fmt(meta.incr)+" kg"+(meta.bw?" Zusatz":"")+"</span>" : "";
       var w=card.querySelector(".warm");
       if(w && ex.warm && !meta.bw){
         var base=Number(sets[0]&&sets[0].kg)||(lp&&lp.sets[0]?Number(lp.sets[0].kg):0);
