@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-11-last-save">
+<meta name="app-version" content="2026-09-11-blue-all-day">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -806,6 +806,7 @@ function maxByEx(beforeDate){
     return (a.savedAt||0)-(b.savedAt||0);
   }).forEach(function(s){
     if(beforeDate && s.date>=beforeDate) return;
+    if(beforeDate===today() && isCalendarToday(s)) return;
     Object.keys(s.sets||{}).forEach(function(ex){
       var arr=s.sets[ex]||[];
       if(!daily[s.date]) daily[s.date]={};
@@ -839,9 +840,11 @@ function maxByEx(beforeDate){
 }
 function todayByEx(date, unitId){
   var m={};
+  var wantToday=date===today();
   (S.data.sessions||[]).forEach(function(s){
-    if(s.date!==date) return;
     if(unitId && s.unit!==unitId) return;
+    if(wantToday){ if(!isCalendarToday(s)) return; }
+    else if(s.date!==date) return;
     Object.keys(s.sets||{}).forEach(function(ex){
       var arr=s.sets[ex]||[];
       if(!m[ex]) m[ex]={date:s.date,sets:[],dates:[]};
@@ -856,15 +859,24 @@ function todayByEx(date, unitId){
   });
   return m;
 }
-/* Blau nur am echten heutigen Kalendertag und nur in der Einheit von heute. */
-function viewingToday(date){ return date===today(); }
-function liveTodaySets(date, unitId){
-  return viewingToday(date) ? todayByEx(date, unitId) : {};
+function dayKeyFromMs(ms){
+  var d=new Date(Number(ms)||0);
+  if(!ms || isNaN(d.getTime())) return "";
+  return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
 }
-function todayOrDraft(saved, draft, showToday){
-  if(!showToday) return null;
+/* Heute = Kalendertag, nicht das Datum im Datepicker. Auch wenn die Einheit
+   unter einem anderen Datum gespeichert wurde, zaehlt savedAt von heute. */
+function isCalendarToday(s){
+  if(!s) return false;
+  if(s.date===today()) return true;
+  return dayKeyFromMs(s.savedAt)===today();
+}
+function liveTodaySets(unitId){
+  return todayByEx(today(), unitId);
+}
+function todayOrDraft(saved, draft){
   if(saved && setHasValue(saved)) return saved;
-  if(setHasValue(draft)) return draft;
+  if(S.draft && S.draft.date===today() && setHasValue(draft)) return draft;
   return null;
 }
 
@@ -1091,8 +1103,8 @@ function prevHTML(prev,prevDate,todaySet,ex){
 }
 
 function trainingHTML(){
-  var d=S.draft, u=unitById(d.unitId), showToday=viewingToday(d.date);
-  var last=maxByEx(today()), todaySets=liveTodaySets(d.date, d.unitId);
+  var d=S.draft, u=unitById(d.unitId);
+  var last=maxByEx(today()), todaySets=liveTodaySets(d.unitId);
   var week = weekOf(S.data.startDate, d.date);
   var kal = !S.data.startDate || week===1;
 
@@ -1120,7 +1132,7 @@ function trainingHTML(){
         numField(setUnit(ex),s.reps,1,ex.id,i,"reps")+
         numField("kg",s.kg,meta.step||2.5,ex.id,i,"kg")+
         saveSetBtn(ex.id,i,s)+
-        prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), todayOrDraft(td&&td.sets[i], s, showToday), ex)+
+        prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), todayOrDraft(td&&td.sets[i], s), ex)+
         "</div>";
     }).join("");
     return "<section class='ex "+u.accent+"' data-card='"+ex.id+"'>"+
@@ -1130,7 +1142,7 @@ function trainingHTML(){
       "<span>Pause "+ex.pause+"</span></div>"+
       warm+"<div class='sets'>"+rows+"</div>"+
       "<div class='ex-foot'><span class='last'>"+
-      lastLine(lp, showToday?td:null, ex)+
+      lastLine(lp, td, ex)+
       "</span></div></section>";
   }).join("");
 
@@ -1147,8 +1159,8 @@ function numField(label,value,step,exId,i,field){
 
 /* Gezielte Aktualisierung ohne Neuaufbau (Fokus bleibt im Feld) */
 function patchTraining(){
-  var d=S.draft, u=unitById(d.unitId), showToday=viewingToday(d.date);
-  var last=maxByEx(today()), todaySets=liveTodaySets(d.date, d.unitId);
+  var d=S.draft, u=unitById(d.unitId);
+  var last=maxByEx(today()), todaySets=liveTodaySets(d.unitId);
   u.ex.forEach(function(ex){
     var sets=d.entries[ex.id]||[], lp=last[ex.id], td=todaySets[ex.id], meta=META[ex.id]||{};
     sets.forEach(function(s,i){
@@ -1158,14 +1170,14 @@ function patchTraining(){
       var und = ex.min!=null && s.reps!=="" && Number(s.reps)<ex.min;
       row.classList.toggle("hit",hit); row.classList.toggle("under",und);
       var pv=row.querySelector(".prev");
-      if(pv) pv.outerHTML = prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), todayOrDraft(td&&td.sets[i], s, showToday), ex);
+      if(pv) pv.outerHTML = prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), todayOrDraft(td&&td.sets[i], s), ex);
       var btn=row.querySelector(".set-save");
       if(btn) btn.outerHTML = saveSetBtn(ex.id,i,s);
     });
     var card=document.querySelector("[data-card='"+ex.id+"']");
     if(card){
       var lastEl=card.querySelector(".ex-foot .last");
-      if(lastEl) lastEl.innerHTML = lastLine(lp, showToday?td:null, ex);
+      if(lastEl) lastEl.innerHTML = lastLine(lp, td, ex);
       var w=card.querySelector(".warm");
       if(w && ex.warm && !meta.bw){
         var base=Number(sets[0]&&sets[0].kg)||(lp&&lp.sets[0]?Number(lp.sets[0].kg):0);
@@ -1609,7 +1621,7 @@ document.addEventListener("click",function(ev){
   if((v=el.getAttribute("data-tab"))){ S.tab=v; render(); window.scrollTo(0,0); return; }
 
   if((v=el.getAttribute("data-unit"))){
-    if(v!==S.draft.unitId){ showUnit(v,S.draft.stufe,S.draft.date); rememberUnit(v); saveDraftSoon(); render(); }
+    if(v!==S.draft.unitId){ showUnit(v,S.draft.stufe,today()); rememberUnit(v); saveDraftSoon(); render(); }
     return;
   }
   if((v=el.getAttribute("data-saveset"))){
@@ -1801,6 +1813,9 @@ initStorage()
         S.draft.entries[ex.id]=arr;
       });
       S.draft.entries=hydrateEntries(S.draft.unitId, S.draft.date, S.draft.entries);
+      if(S.draft.date!==today() && !draftHasValues(S.draft)){
+        showUnit(S.draft.unitId, S.draft.stufe, today());
+      }
       parkDraft();
       S.autosavedAt = new Date();
     } else {
