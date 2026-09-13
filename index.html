@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-11-blue-all-day">
+<meta name="app-version" content="2026-09-13-setline-wrap">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -137,11 +137,11 @@ main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction
 .prev{grid-column:1/-1;width:100%;display:flex;flex-direction:column;align-items:stretch;gap:4px;
   margin-top:7px;padding-top:6px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--mut)}
 .prev.none{justify-content:flex-start;font-style:italic;opacity:.75}
-.prev-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.prev-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px 12px;flex-wrap:wrap}
 .prevval{display:flex;align-items:baseline;gap:6px;min-width:0}
-.prevval.max b{color:var(--warn);font-weight:700;font-size:14px}
+.prevval.max b{color:var(--warn);font-weight:700;font-size:14px;overflow-wrap:anywhere}
 .prevval.today{margin-left:auto;text-align:right}
-.prevval.today b{color:#7EB8F5;font-weight:700;font-size:14px}
+.prevval.today b{color:#7EB8F5;font-weight:700;font-size:14px;overflow-wrap:anywhere}
 .prevlbl{display:inline-block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
 .prstar{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;
   border-radius:999px;background:var(--a1s);border:1px solid var(--a1);color:var(--a1);
@@ -155,11 +155,15 @@ main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction
 .ex-foot{display:flex;justify-content:space-between;gap:10px;padding:9px 14px 11px;
   border-top:1px solid var(--line2);font-size:11.5px;color:var(--mut);flex-wrap:wrap}
 .last{min-width:0;flex:1}
-.setline{display:flex;flex-direction:column;gap:4px;width:100%}
-.setline-row{display:grid;gap:6px;align-items:baseline}
-.setline-row span{min-width:0;font-variant-numeric:tabular-nums;font-weight:700;font-size:12.5px;white-space:nowrap}
-.setline-row.max span{color:var(--warn)}
-.setline-row.today span{color:#7EB8F5}
+.setline{display:flex;flex-wrap:wrap;gap:8px;width:100%}
+.setline-set{flex:1 1 132px;min-width:min(132px,100%);max-width:100%;
+  display:flex;flex-direction:column;gap:3px;padding:7px 9px;
+  background:var(--sunk);border-radius:10px;box-sizing:border-box}
+.setline-n{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:700}
+.setline-v{min-width:0;font-variant-numeric:tabular-nums;font-weight:700;font-size:12.5px;
+  line-height:1.3;overflow-wrap:anywhere}
+.setline-v.max{color:var(--warn)}
+.setline-v.today{color:#7EB8F5}
 .lastval{color:var(--warn);font-weight:700;font-size:14px}
 .todayval{color:#7EB8F5;font-weight:700;font-size:14px}
 
@@ -250,9 +254,12 @@ td.k{width:74px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color
   .numrow input{font-size:16px;padding:6px 0}
   .step{width:34px;min-height:34px;font-size:18px}
   .prev{margin-top:4px;padding-top:8px;font-size:12px}
-  .ex-foot{padding:11px 14px 13px;font-size:12px}
-  .setline-row{gap:4px}
-  .setline-row span{font-size:11.5px}
+  .prev-row{flex-direction:column;align-items:flex-start;gap:3px}
+  .prevval.today{margin-left:0;text-align:left}
+  .ex-foot{padding:11px 12px 13px;font-size:12px}
+  .setline{gap:8px}
+  .setline-set{flex:0 1 calc(50% - 4px);min-width:calc(50% - 4px);max-width:calc(50% - 4px);padding:8px 9px}
+  .setline-v{font-size:13px}
   .btn.main{width:100%;font-size:16px}
   .stats{gap:8px}
   .stat{min-width:calc(50% - 4px);padding:12px;border-radius:16px}
@@ -680,14 +687,14 @@ function lastLine(lp, todayEx, ex){
   if(!cols.length) return "Noch kein Eintrag — Startgewicht in Woche 1 finden";
   var hasToday=cols.some(function(c){ return c.today!=="–"; });
   var hasMax=cols.some(function(c){ return c.max!=="–"; });
-  var style="grid-template-columns:repeat("+cols.length+",minmax(0,1fr))";
-  var maxRow=hasMax
-    ? "<div class='setline-row max' style='"+style+"'>"+cols.map(function(c){ return "<span class='mono'>"+c.max+"</span>"; }).join("")+"</div>"
-    : "";
-  var todayRow=hasToday
-    ? "<div class='setline-row today' style='"+style+"'>"+cols.map(function(c){ return "<span class='mono'>"+c.today+"</span>"; }).join("")+"</div>"
-    : "";
-  return "<div class='setline'>"+maxRow+todayRow+"</div>";
+  var cells=cols.map(function(c,i){
+    return "<div class='setline-set'>"+
+      "<span class='setline-n'>Satz "+(i+1)+"</span>"+
+      (hasMax?"<span class='setline-v max mono'>"+c.max+"</span>":"")+
+      (hasToday?"<span class='setline-v today mono'>"+c.today+"</span>":"")+
+    "</div>";
+  }).join("");
+  return "<div class='setline'>"+cells+"</div>";
 }
 function dateShort(d){ var p=d.split("-"); return p[2]+"."+p[1]+"."; }
 function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
@@ -1141,9 +1148,9 @@ function trainingHTML(){
       "<div class='ex-target'><span><b>"+esc(schemeText(ex))+"</b></span>"+
       "<span>Pause "+ex.pause+"</span></div>"+
       warm+"<div class='sets'>"+rows+"</div>"+
-      "<div class='ex-foot'><span class='last'>"+
+      "<div class='ex-foot'><div class='last'>"+
       lastLine(lp, td, ex)+
-      "</span></div></section>";
+      "</div></div></section>";
   }).join("");
 
   return bar+notes+"<div class='exlist'>"+cards+"</div>";
