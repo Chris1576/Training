@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-13-add-set">
+<meta name="app-version" content="2026-09-13-set-reset">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -979,8 +979,14 @@ function hydrateEntries(unitId, date, overlay){
     var over=overlay && overlay[ex.id];
     var saved=sess && sess.sets && sess.sets[ex.id];
     var n=ex.sets;
-    if(over && over.length) n=over.length;
-    else if(saved && saved.length) n=saved.length;
+    /* Weniger/mehr Saetze gelten nur fuer DIESES Training (dieser Tag).
+       Ein neuer Tag startet immer mit der geplanten Satzzahl. */
+    if(sess){
+      if(over && over.length) n=over.length;
+      else if(saved && saved.length) n=saved.length;
+    } else if(over && over.length){
+      n=over.length;
+    }
     var arr=emptySlots(n);
     if(over){
       over.forEach(function(s,i){
@@ -993,6 +999,17 @@ function hydrateEntries(unitId, date, overlay){
     entries[ex.id]=arr;
   });
   return entries;
+}
+function ensureTodayDraft(){
+  if(!S.draft){
+    buildDraft(suggestedUnit(),"A",today());
+    return true;
+  }
+  if(S.draft.date===today()) return false;
+  flushDraftFromDom();
+  parkDraft();
+  showUnit(S.draft.unitId, S.draft.stufe, today());
+  return true;
 }
 function savedSetAt(exId, i){
   var sess=S.draft ? sessionFor(S.draft.date, S.draft.unitId) : null;
@@ -1901,9 +1918,7 @@ initStorage()
           S.draft.entries[ex.id]=emptySlots(ex.sets);
       });
       S.draft.entries=hydrateEntries(S.draft.unitId, S.draft.date, S.draft.entries);
-      if(S.draft.date!==today() && !draftHasValues(S.draft)){
-        showUnit(S.draft.unitId, S.draft.stufe, today());
-      }
+      ensureTodayDraft();
       parkDraft();
       S.autosavedAt = new Date();
     } else {
@@ -1927,9 +1942,12 @@ document.addEventListener("visibilitychange", function(){
     flushOnLeave();
     return;
   }
-  if(document.visibilityState==="visible" && ghReady() && GH.auto){
-    if(Date.now() - _lastSaveAt < 8000) return;
-    syncUp(true);
+  if(document.visibilityState==="visible"){
+    if(ensureTodayDraft()) render();
+    if(ghReady() && GH.auto){
+      if(Date.now() - _lastSaveAt < 8000) return;
+      syncUp(true);
+    }
   }
 });
 </script>
