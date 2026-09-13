@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-13-set-reset">
+<meta name="app-version" content="2026-09-13-set-btns">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -126,9 +126,9 @@ main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction
   touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .set-save.done{background:var(--a1s);color:var(--a1);border:1px solid var(--a1)}
 .set-save.empty{visibility:hidden;pointer-events:none;background:transparent;border:0}
-.set-actions{display:flex;gap:8px;padding:8px 14px 10px;border-top:1px solid var(--line2)}
-.set-act{flex:1;min-height:44px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);
-  border-radius:12px;font-size:14px;font-weight:700;touch-action:manipulation}
+.set-actions{display:flex;justify-content:flex-end;gap:6px;padding:6px 14px 8px;border-top:1px solid var(--line2)}
+.set-act{width:32px;height:32px;min-width:32px;padding:0;border:1px solid var(--line);background:var(--sunk);color:var(--ink);
+  border-radius:9px;font-size:18px;font-weight:700;line-height:1;touch-action:manipulation}
 .set-act.add{border-color:var(--a1);color:var(--a1);background:var(--a1s)}
 .set-act:disabled{opacity:.4;color:var(--mut);border-color:var(--line);background:var(--sunk)}
 .lbl{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}
@@ -265,8 +265,8 @@ td.k{width:74px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color
   .setline{gap:8px}
   .setline-set{flex:0 1 calc(50% - 4px);min-width:calc(50% - 4px);max-width:calc(50% - 4px);padding:8px 9px}
   .setline-v{font-size:13px}
-  .set-actions{padding:10px 12px 12px;gap:8px}
-  .set-act{min-height:46px;font-size:15px}
+  .set-actions{padding:6px 12px 8px;gap:6px}
+  .set-act{width:34px;height:34px;min-width:34px;font-size:18px}
   .btn.main{width:100%;font-size:16px}
   .stats{gap:8px}
   .stat{min-width:calc(50% - 4px);padding:12px;border-radius:16px}
@@ -1246,8 +1246,8 @@ function trainingHTML(){
 
 function setActionsHTML(exId, count){
   return "<div class='set-actions'>"+
-    "<button class='set-act' data-rmset='"+exId+"'"+(count<=1?" disabled":"")+" aria-label='Letzten Satz entfernen'>− Satz</button>"+
-    "<button class='set-act add' data-addset='"+exId+"' aria-label='Satz hinzufügen'>+ Satz</button>"+
+    "<button class='set-act' data-rmset='"+exId+"'"+(count<=1?" disabled":"")+" aria-label='Satz entfernen'>−</button>"+
+    "<button class='set-act add' data-addset='"+exId+"' aria-label='Satz hinzufügen'>+</button>"+
     "</div>";
 }
 function numField(label,value,step,exId,i,field){
