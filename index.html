@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-13-setline-wrap">
+<meta name="app-version" content="2026-09-13-add-set">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -126,6 +126,11 @@ main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction
   touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .set-save.done{background:var(--a1s);color:var(--a1);border:1px solid var(--a1)}
 .set-save.empty{visibility:hidden;pointer-events:none;background:transparent;border:0}
+.set-actions{display:flex;gap:8px;padding:8px 14px 10px;border-top:1px solid var(--line2)}
+.set-act{flex:1;min-height:44px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);
+  border-radius:12px;font-size:14px;font-weight:700;touch-action:manipulation}
+.set-act.add{border-color:var(--a1);color:var(--a1);background:var(--a1s)}
+.set-act:disabled{opacity:.4;color:var(--mut);border-color:var(--line);background:var(--sunk)}
 .lbl{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}
 .numf{min-width:0;width:auto}
 .numrow{display:flex;border:1px solid var(--line);background:var(--sunk);border-radius:10px;overflow:hidden}
@@ -260,6 +265,8 @@ td.k{width:74px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color
   .setline{gap:8px}
   .setline-set{flex:0 1 calc(50% - 4px);min-width:calc(50% - 4px);max-width:calc(50% - 4px);padding:8px 9px}
   .setline-v{font-size:13px}
+  .set-actions{padding:10px 12px 12px;gap:8px}
+  .set-act{min-height:46px;font-size:15px}
   .btn.main{width:100%;font-size:16px}
   .stats{gap:8px}
   .stat{min-width:calc(50% - 4px);padding:12px;border-radius:16px}
@@ -671,7 +678,8 @@ function lastDateAt(lp, i){
   return (lp.dates && lp.dates[i]) || lp.date || "";
 }
 function lastLine(lp, todayEx, ex){
-  var n=Math.max(
+  var draftLen=S.draft && S.draft.entries && S.draft.entries[ex.id] ? S.draft.entries[ex.id].length : 0;
+  var n=draftLen || Math.max(
     lp && lp.sets ? lp.sets.length : 0,
     todayEx && todayEx.sets ? todayEx.sets.length : 0
   );
@@ -952,32 +960,38 @@ function cloneSetsMap(src){
   });
   return sets;
 }
+function emptySlots(n){
+  var arr=[], i;
+  for(i=0;i<n;i++) arr.push({ kg:"", reps:"", rir:"" });
+  return arr;
+}
 function emptyEntries(unitId){
   var u=unitById(unitId), entries={};
-  u.ex.forEach(function(ex){
-    var arr=[];
-    for(var i=0;i<ex.sets;i++) arr.push({ kg:"", reps:"", rir:"" });
-    entries[ex.id]=arr;
-  });
+  u.ex.forEach(function(ex){ entries[ex.id]=emptySlots(ex.sets); });
   return entries;
 }
 function copySet(s){
   return { kg:s&&s.kg!=""&&s.kg!=null?String(s.kg):"", reps:s&&s.reps!=""&&s.reps!=null?String(s.reps):"", rir:(s&&s.rir)||"" };
 }
 function hydrateEntries(unitId, date, overlay){
-  var entries=emptyEntries(unitId);
-  var sess=sessionFor(date, unitId);
-  if(overlay){
-    Object.keys(overlay).forEach(function(ex){
-      if(!entries[ex]) return;
-      (overlay[ex]||[]).forEach(function(s,i){
-        if(!entries[ex][i] || !setHasValue(s)) return;
-        var saved=sess && sess.sets && sess.sets[ex] && sess.sets[ex][i];
-        if(setMatchesSaved(s, saved)) return;
-        entries[ex][i]=copySet(s);
+  var u=unitById(unitId), sess=sessionFor(date, unitId), entries={};
+  u.ex.forEach(function(ex){
+    var over=overlay && overlay[ex.id];
+    var saved=sess && sess.sets && sess.sets[ex.id];
+    var n=ex.sets;
+    if(over && over.length) n=over.length;
+    else if(saved && saved.length) n=saved.length;
+    var arr=emptySlots(n);
+    if(over){
+      over.forEach(function(s,i){
+        if(!arr[i] || !setHasValue(s)) return;
+        var sv=saved && saved[i];
+        if(setMatchesSaved(s, sv)) return;
+        arr[i]=copySet(s);
       });
-    });
-  }
+    }
+    entries[ex.id]=arr;
+  });
   return entries;
 }
 function savedSetAt(exId, i){
@@ -1000,6 +1014,62 @@ function clearDraftSet(exId, index){
   if(!row) return;
   var inputs=row.querySelectorAll("[data-in]");
   for(var i=0;i<inputs.length;i++) inputs[i].value="";
+}
+var SET_COUNT_MAX=10;
+function addDraftSet(exId){
+  if(!S.draft) return;
+  flushDraftFromDom();
+  if(!S.draft.entries[exId]) S.draft.entries[exId]=[];
+  if(S.draft.entries[exId].length>=SET_COUNT_MAX){ toast("Höchstens "+SET_COUNT_MAX+" Sätze"); return; }
+  S.draft.entries[exId].push({ kg:"", reps:"", rir:"" });
+  parkDraft();
+  saveDraftSoon();
+  render();
+  var rows=document.querySelectorAll("[data-row^='"+exId+"|']");
+  if(rows.length) rows[rows.length-1].scrollIntoView({ block:"nearest" });
+}
+function trimSessionSets(date, unitId, exId, count){
+  var existing=sessionFor(date, unitId);
+  if(!existing || !existing.sets || !existing.sets[exId]) return false;
+  if(existing.sets[exId].length<=count) return false;
+  var sets=cloneSetsMap(existing.sets);
+  sets[exId]=sets[exId].slice(0, count);
+  var now=Date.now();
+  S.data.sessions=S.data.sessions.filter(function(sess){ return !(sess.date===date && sess.unit===unitId); });
+  S.data.sessions.push({
+    id:existing.id||(date+"-"+unitId), date:date, unit:unitId,
+    week:existing.week, stufe:existing.stufe||"A", sets:sets, savedAt:now
+  });
+  S.data.sessions=mergeSessions(S.data.sessions, S.data.sessions);
+  S.data.updatedAt=now;
+  return true;
+}
+function removeDraftSet(exId){
+  if(!S.draft || !S.draft.entries[exId]) return;
+  flushDraftFromDom();
+  var arr=S.draft.entries[exId];
+  if(arr.length<=1){ toast("Mindestens ein Satz"); return; }
+  var last=arr[arr.length-1];
+  var saved=savedSetAt(exId, arr.length-1);
+  if((setHasValue(last) || setHasValue(saved)) && !confirm("Letzten Satz wirklich entfernen?")) return;
+  arr.pop();
+  _pendingSaved=_pendingSaved.filter(function(p){
+    return !(p.date===S.draft.date && p.unit===S.draft.unitId && p.ex===exId && p.index>=arr.length);
+  });
+  var stale=document.querySelectorAll("[data-row^='"+exId+"|']");
+  for(var i=0;i<stale.length;i++){
+    var idx=Number(String(stale[i].getAttribute("data-row")||"").split("|")[1]);
+    if(idx>=arr.length) stale[i].remove();
+  }
+  var changed=trimSessionSets(S.draft.date, S.draft.unitId, exId, arr.length);
+  parkDraft();
+  persistAllNow();
+  render();
+  toast("Satz entfernt");
+  if(!changed){ saveDraftSoon(); return; }
+  persist().then(function(){
+    if(ghReady()) return syncUp(true);
+  }).catch(function(){});
 }
 
 function buildDraft(unitId,stufe,date,overlay){
@@ -1148,6 +1218,7 @@ function trainingHTML(){
       "<div class='ex-target'><span><b>"+esc(schemeText(ex))+"</b></span>"+
       "<span>Pause "+ex.pause+"</span></div>"+
       warm+"<div class='sets'>"+rows+"</div>"+
+      setActionsHTML(ex.id, sets.length)+
       "<div class='ex-foot'><div class='last'>"+
       lastLine(lp, td, ex)+
       "</div></div></section>";
@@ -1156,6 +1227,12 @@ function trainingHTML(){
   return bar+notes+"<div class='exlist'>"+cards+"</div>";
 }
 
+function setActionsHTML(exId, count){
+  return "<div class='set-actions'>"+
+    "<button class='set-act' data-rmset='"+exId+"'"+(count<=1?" disabled":"")+" aria-label='Letzten Satz entfernen'>− Satz</button>"+
+    "<button class='set-act add' data-addset='"+exId+"' aria-label='Satz hinzufügen'>+ Satz</button>"+
+    "</div>";
+}
 function numField(label,value,step,exId,i,field){
   return "<div class='numf'><span class='lbl'>"+label+"</span><div class='numrow'>"+
     "<button class='step' data-bump='"+exId+"|"+i+"|"+field+"|-1|"+step+"' aria-label='"+label+" verringern'>−</button>"+
@@ -1183,6 +1260,8 @@ function patchTraining(){
     });
     var card=document.querySelector("[data-card='"+ex.id+"']");
     if(card){
+      var acts=card.querySelector(".set-actions");
+      if(acts) acts.outerHTML = setActionsHTML(ex.id, sets.length);
       var lastEl=card.querySelector(".ex-foot .last");
       if(lastEl) lastEl.innerHTML = lastLine(lp, td, ex);
       var w=card.querySelector(".warm");
@@ -1500,7 +1579,8 @@ function writeSetIntoSession(date, unitId, stufe, exId, index, written){
   var existing=sessionFor(date, unitId);
   var sets=cloneSetsMap(existing && existing.sets);
   if(!sets[exId]) sets[exId]=[];
-  var need=Math.max(index+1, (exById(exId)||{}).sets||0);
+  var draftLen=S.draft && S.draft.entries && S.draft.entries[exId] ? S.draft.entries[exId].length : 0;
+  var need=Math.max(index+1, draftLen);
   while(sets[exId].length<need) sets[exId].push({kg:"",reps:"",rir:""});
   sets[exId][index]=written;
   S.data.sessions=S.data.sessions.filter(function(sess){ return !(sess.date===date && sess.unit===unitId); });
@@ -1621,7 +1701,7 @@ document.addEventListener("pointerdown",function(ev){
 }, true);
 
 document.addEventListener("click",function(ev){
-  var el=ev.target.closest ? ev.target.closest("[data-tab],[data-unit],[data-saveset],[data-bump],#toolsToggle,#csvBtn,#clearBtn,#exportBtn,#backupBtn,#ghToggle,#ghSave,#ghUp,#ghDown,#ghForce") : null;
+  var el=ev.target.closest ? ev.target.closest("[data-tab],[data-unit],[data-saveset],[data-addset],[data-rmset],[data-bump],#toolsToggle,#csvBtn,#clearBtn,#exportBtn,#backupBtn,#ghToggle,#ghSave,#ghUp,#ghDown,#ghForce") : null;
   if(!el) return;
 
   var v;
@@ -1636,6 +1716,8 @@ document.addEventListener("click",function(ev){
     saveSet(sp[0], Number(sp[1]));
     return;
   }
+  if((v=el.getAttribute("data-addset"))){ addDraftSet(v); return; }
+  if((v=el.getAttribute("data-rmset"))){ removeDraftSet(v); return; }
 
   if((v=el.getAttribute("data-bump"))){
     var q=v.split("|"), ex=q[0], i=Number(q[1]), field=q[2], dir=Number(q[3]), step=Number(q[4]);
@@ -1815,9 +1897,8 @@ initStorage()
     if(S.draft && draftValid(S.draft)){
       var u=unitById(S.draft.unitId);
       u.ex.forEach(function(ex){
-        var arr=S.draft.entries[ex.id]||[];
-        while(arr.length<ex.sets) arr.push({kg:"",reps:"",rir:""});
-        S.draft.entries[ex.id]=arr;
+        if(!S.draft.entries[ex.id] || !S.draft.entries[ex.id].length)
+          S.draft.entries[ex.id]=emptySlots(ex.sets);
       });
       S.draft.entries=hydrateEntries(S.draft.unitId, S.draft.date, S.draft.entries);
       if(S.draft.date!==today() && !draftHasValues(S.draft)){
