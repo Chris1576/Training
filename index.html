@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-17-head-smooth">
+<meta name="app-version" content="2026-09-17-collapse-ex">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -112,10 +112,15 @@ main{padding:14px 12px;max-width:760px;margin:0 auto;display:flex;flex-direction
 .ex{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line);
   border-radius:16px;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.035) inset}
 .ex.a1{border-left-color:var(--a1)} .ex.a2{border-left-color:var(--a2)} .ex.a3{border-left-color:var(--a3)}
-.ex-head{display:flex;align-items:baseline;gap:8px;padding:11px 14px 0}
+.ex-head{display:flex;align-items:center;gap:8px;padding:11px 14px 0}
 .ex-idx{font-size:11px;font-weight:700;color:var(--mut);font-variant-numeric:tabular-nums}
 .ex-name{flex:1;font-size:15px;font-weight:700;line-height:1.25}
 .ex-name i{font-style:normal;font-weight:400;color:var(--mut);font-size:12.5px}
+.ex-toggle{margin-left:auto;flex-shrink:0;width:34px;min-height:34px;border:0;background:transparent;
+  color:var(--mut);border-radius:9px;touch-action:manipulation}
+.ex-toggle:active{background:var(--sunk)}
+.ex-toggle .chev{width:auto}
+.ex.collapsed .ex-body{display:none}
 .ex-target{display:flex;gap:14px;padding:4px 14px 8px;font-size:12px;color:var(--mut);flex-wrap:wrap}
 .ex-target b{color:var(--ink)}
 .warm{margin:0 14px 8px;padding:7px 9px;background:var(--sunk);font-size:12px;color:var(--mut);border-radius:12px}
@@ -783,8 +788,11 @@ var S = {
   showCsv:false,
   toolsOpen:false,
   autosavedAt:null,
-  ghOpen:false
+  ghOpen:false,
+  collapsed:{}           /* exId -> true/false; fehlt = eingeklappt (Standard) */
 };
+/* Beim Öffnen der App ist jede Übung eingeklappt, bis man sie antippt. */
+function isExCollapsed(exId){ return S.collapsed[exId]!==false; }
 
 /* Ein Satz zaehlt, sobald der eigentliche Wert da ist: bei Eigengewicht
    und Halteuebungen reicht die Wiederholung / Sekunde, sonst kg + Wdh. */
@@ -1236,13 +1244,18 @@ function trainingHTML(){
         prevHTML(lp&&lp.sets[i], lastDateAt(lp,i), todayOrDraft(td&&td.sets[i], s), ex)+
         "</div>";
     }).join("");
-    return "<section class='ex "+u.accent+"' data-card='"+ex.id+"'>"+
+    var collapsed=isExCollapsed(ex.id);
+    return "<section class='ex "+u.accent+(collapsed?" collapsed":"")+"' data-card='"+ex.id+"'>"+
       "<div class='ex-head'><span class='ex-idx'>"+(idx+1)+"</span>"+
-      "<div class='ex-name'>"+esc(ex.name)+(ex.hint?" <i>"+esc(ex.hint)+"</i>":"")+"</div></div>"+
+      "<div class='ex-name'>"+esc(ex.name)+(ex.hint?" <i>"+esc(ex.hint)+"</i>":"")+"</div>"+
+      "<button class='ex-toggle' data-collapse='"+ex.id+"' aria-label='"+(collapsed?"Sätze einblenden":"Sätze einklappen")+"'>"+
+      "<span class='chev'>"+(collapsed?"▾":"▴")+"</span></button></div>"+
       "<div class='ex-target'><span><b>"+esc(schemeText(ex))+"</b></span>"+
       "<span>Pause "+ex.pause+"</span></div>"+
+      "<div class='ex-body'>"+
       warm+"<div class='sets'>"+rows+"</div>"+
       setActionsHTML(ex.id, sets.length)+
+      "</div>"+
       "<div class='ex-foot'><div class='last'>"+
       lastLine(lp, td, ex)+
       "</div></div></section>";
@@ -1725,7 +1738,7 @@ document.addEventListener("pointerdown",function(ev){
 }, true);
 
 document.addEventListener("click",function(ev){
-  var el=ev.target.closest ? ev.target.closest("[data-tab],[data-unit],[data-saveset],[data-addset],[data-rmset],[data-bump],#toolsToggle,#csvBtn,#clearBtn,#exportBtn,#backupBtn,#ghToggle,#ghSave,#ghUp,#ghDown,#ghForce") : null;
+  var el=ev.target.closest ? ev.target.closest("[data-tab],[data-unit],[data-saveset],[data-addset],[data-rmset],[data-collapse],[data-bump],#toolsToggle,#csvBtn,#clearBtn,#exportBtn,#backupBtn,#ghToggle,#ghSave,#ghUp,#ghDown,#ghForce") : null;
   if(!el) return;
 
   var v;
@@ -1742,6 +1755,7 @@ document.addEventListener("click",function(ev){
   }
   if((v=el.getAttribute("data-addset"))){ addDraftSet(v); return; }
   if((v=el.getAttribute("data-rmset"))){ removeDraftSet(v); return; }
+  if((v=el.getAttribute("data-collapse"))){ S.collapsed[v]=!isExCollapsed(v); render(); return; }
 
   if((v=el.getAttribute("data-bump"))){
     var q=v.split("|"), ex=q[0], i=Number(q[1]), field=q[2], dir=Number(q[3]), step=Number(q[4]);
