@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-17-stacked-fields">
+<meta name="app-version" content="2026-09-17-flush-prev">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -1199,15 +1199,17 @@ function prevHTML(prev,prevDate,todaySet,ex){
   }
 
   var left = prev
-    ? "<span class='prevval max'>"+
-      (prevDate?"<span class='prevlbl'>"+dateShort(prevDate)+"</span>":"")+
-      "<b class='mono'>"+lastSetText(prev,ex)+"</b></span>"
+    ? "<span class='prevval max'><b class='mono'>"+lastSetText(prev,ex)+"</b></span>"
     : "<span class='prevval max'><b class='mono'>–</b></span>";
   var right = today
     ? "<span class='prevval today'><b class='mono'>"+lastSetText(today,ex)+"</b>"+star+"</span>"
     : "";
+  /* Datum als eigene Zeile, damit Max- und Heute-Wert links buendig
+     untereinander stehen — nicht durch das Datum verschoben. */
+  var dateLbl = prevDate ? "<span class='prevlbl'>"+dateShort(prevDate)+"</span>" : "";
   return "<div class='prev'>"+
     (chips?"<span class='chips'>"+chips+"</span>":"")+
+    dateLbl+
     "<div class='prev-row'>"+left+right+"</div></div>";
 }
 
