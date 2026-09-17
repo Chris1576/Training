@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-17-head-scroll">
+<meta name="app-version" content="2026-09-17-head-smooth">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -46,11 +46,12 @@ h1,h2,h3{margin:0}
 /* Kopf */
 .head{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--panel) 86%,transparent);
   border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px);
-  display:grid;grid-template-rows:1fr;
-  transition:grid-template-rows .22s ease,border-color .22s ease,padding-top .22s ease;
+  overflow:hidden;max-height:var(--head-h,220px);
+  transition:max-height .28s cubic-bezier(.4,0,.2,1),opacity .22s ease,
+    padding-top .28s cubic-bezier(.4,0,.2,1),border-color .28s ease;
   -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
-.head-clip{min-height:0;overflow:hidden}
-.head.away{grid-template-rows:0fr;padding-top:0;border-bottom-color:transparent;pointer-events:none}
+.head-clip{min-height:0}
+.head.away{max-height:0;padding-top:0;opacity:0;border-bottom-color:transparent;pointer-events:none}
 .head-top{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px 10px;gap:12px}
 .kicker{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
 .title{font-size:24px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
@@ -1129,6 +1130,7 @@ var TABS=[["training","Training"],["verlauf","Verlauf"]];
 function render(){
   var app=document.getElementById("app");
   app.innerHTML = headHTML() + "<main id='main'>" + bodyHTML() + "</main>";
+  measureHead();
   applyHeadAway(_headAway && pageScrollY()>=12);
 }
 
@@ -1939,6 +1941,13 @@ initStorage()
 var _headLastY=0;
 var _headAway=false;
 function pageScrollY(){ return window.scrollY || document.documentElement.scrollTop || 0; }
+/* Echte Pixelhoehe messen statt fr-Einheiten zu animieren — Safari kann
+   grid-template-rows/fr nicht sanft animieren und springt sonst hart. */
+function measureHead(){
+  var head=document.querySelector(".head");
+  if(!head) return;
+  head.style.setProperty("--head-h", head.scrollHeight+"px");
+}
 function applyHeadAway(away){
   _headAway=!!away;
   var head=document.querySelector(".head");
@@ -1955,11 +1964,16 @@ function syncHeadOnScroll(){
   else if(dy<-4) applyHeadAway(false);
   _headLastY=y;
 }
-window.addEventListener("scroll", syncHeadOnScroll, {passive:true});
-document.addEventListener("touchmove", syncHeadOnScroll, {passive:true});
+var _headRaf=null;
+function scheduleHeadSync(){
+  if(_headRaf) return;
+  _headRaf=requestAnimationFrame(function(){ _headRaf=null; syncHeadOnScroll(); });
+}
+window.addEventListener("scroll", scheduleHeadSync, {passive:true});
+window.addEventListener("resize", measureHead);
 if(window.visualViewport){
-  window.visualViewport.addEventListener("resize", syncHeadOnScroll);
-  window.visualViewport.addEventListener("scroll", syncHeadOnScroll);
+  window.visualViewport.addEventListener("resize", function(){ measureHead(); scheduleHeadSync(); });
+  window.visualViewport.addEventListener("scroll", scheduleHeadSync);
 }
 
 /* Beim Verlassen sofort Daten und Entwurf schreiben, nicht nur den Draft. */
