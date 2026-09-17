@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta name="app-version" content="2026-09-13-set-btns">
+<meta name="app-version" content="2026-09-17-head-scroll">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#0E1110">
 <meta name="format-detection" content="telephone=no">
@@ -46,7 +46,11 @@ h1,h2,h3{margin:0}
 /* Kopf */
 .head{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--panel) 86%,transparent);
   border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px);
+  display:grid;grid-template-rows:1fr;
+  transition:grid-template-rows .22s ease,border-color .22s ease,padding-top .22s ease;
   -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
+.head-clip{min-height:0;overflow:hidden}
+.head.away{grid-template-rows:0fr;padding-top:0;border-bottom-color:transparent;pointer-events:none}
 .head-top{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px 10px;gap:12px}
 .kicker{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
 .title{font-size:24px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
@@ -1125,6 +1129,7 @@ var TABS=[["training","Training"],["verlauf","Verlauf"]];
 function render(){
   var app=document.getElementById("app");
   app.innerHTML = headHTML() + "<main id='main'>" + bodyHTML() + "</main>";
+  applyHeadAway(_headAway && pageScrollY()>=12);
 }
 
 function headHTML(){
@@ -1132,13 +1137,13 @@ function headHTML(){
   var tabs = TABS.map(function(t){
     return "<button class='tab"+(S.tab===t[0]?" on":"")+"' data-tab='"+t[0]+"'>"+t[1]+"</button>";
   }).join("");
-  return "<header class='head'><div class='head-top'><div>"+
+  return "<header class='head'><div class='head-clip'><div class='head-top'><div>"+
     "<div class='kicker'>Pull · Push · Leg</div>"+
     "<h1 class='title'>Trainingslog</h1></div>"+
     "<div class='weekbox'><span class='weeklbl'>Woche</span>"+
     "<span class='weeknum'>"+w+"</span>"+
     "<span class='weeksub'>"+S.data.sessions.length+" Einheiten</span></div></div>"+
-    "<nav class='tabs'>"+tabs+"</nav></header>";
+    "<nav class='tabs'>"+tabs+"</nav></div></header>";
 }
 
 function storageBanner(){
@@ -1930,6 +1935,32 @@ initStorage()
     if(S.draft && draftHasValues(S.draft)) toast("Laufende Einheit wiederhergestellt");
     if(ghReady() && GH.auto) syncUp(true);
   });
+
+var _headLastY=0;
+var _headAway=false;
+function pageScrollY(){ return window.scrollY || document.documentElement.scrollTop || 0; }
+function applyHeadAway(away){
+  _headAway=!!away;
+  var head=document.querySelector(".head");
+  if(head) head.classList.toggle("away", _headAway);
+}
+function syncHeadOnScroll(){
+  var y=pageScrollY();
+  var vv=window.visualViewport;
+  var kb=vv && ((window.innerHeight - vv.height) > 100);
+  if(kb){ applyHeadAway(true); _headLastY=y; return; }
+  if(y<16){ applyHeadAway(false); _headLastY=y; return; }
+  var dy=y-_headLastY;
+  if(dy>4) applyHeadAway(true);
+  else if(dy<-4) applyHeadAway(false);
+  _headLastY=y;
+}
+window.addEventListener("scroll", syncHeadOnScroll, {passive:true});
+document.addEventListener("touchmove", syncHeadOnScroll, {passive:true});
+if(window.visualViewport){
+  window.visualViewport.addEventListener("resize", syncHeadOnScroll);
+  window.visualViewport.addEventListener("scroll", syncHeadOnScroll);
+}
 
 /* Beim Verlassen sofort Daten und Entwurf schreiben, nicht nur den Draft. */
 function flushOnLeave(){
