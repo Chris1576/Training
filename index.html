@@ -321,28 +321,32 @@ var META = {
   oh_carry:{incr:2,step:1,label:"OH Carry"},
   hanging_tuck:{incr:0,step:1,bw:true,label:"Hanging Tuck up"},
   split_squat:{incr:2,step:1,label:"Split squat"},
-  step_up:{incr:2,step:1,label:"Step up"},
+  step_up:{incr:2,step:1,label:"DB Step up"},
   db_rdl:{incr:2,step:1,label:"DB RDL"},
+  bb_rdl:{incr:5,step:2.5,label:"BB RDL"},
+  db_hammer_curl:{incr:1,step:1,label:"DB Hammer Curl"},
+  tri_ext:{incr:1,step:1,label:"Tri Extension / French Press"},
   glute_bridge:{incr:2.5,step:2.5,label:"Glute Bridge"},
   copenhagen:{incr:0,step:1,bw:true,label:"Copenhagen Plank"}
 };
 
 var UNITS = [
  {id:"GK1",n:1,day:"Dienstag",prio:"Pull",accent:"a1",ex:[
-  {id:"clean_prep",name:"Clean Prep",scheme:"3× 5+5+5",sets:3,min:5,max:5,rir:"2",pause:"1,5 Min"},
   {id:"power_clean",name:"Power Clean",scheme:"5×3",sets:5,min:3,max:3,rir:"2",pause:"1,5 Min",warm:true},
-  {id:"back_squat",name:"Back Squat",scheme:"3×5",sets:3,min:5,max:5,rir:"2",pause:"1,5 Min",warm:true},
-  {id:"pullup",name:"Pull up",scheme:"3×Max",sets:3,rir:"0",pause:"1,5 Min"}]},
+  {id:"back_squat",name:"Back Squat",scheme:"3×6–8",sets:3,min:6,max:8,rir:"2",pause:"1,5 Min",warm:true},
+  {id:"pullup",name:"Pull up",scheme:"3×Max",sets:3,rir:"0",pause:"1,5 Min"},
+  {id:"db_hammer_curl",name:"DB Hammer Curl",scheme:"3×8–12",sets:3,min:8,max:12,rir:"1–2",pause:"1,5 Min"}]},
  {id:"GK2",n:2,day:"Donnerstag",prio:"Push",accent:"a2",ex:[
   {id:"bench",name:"Bench Press",scheme:"3×6–8",sets:3,min:6,max:8,rir:"1–2",pause:"1,5 Min",warm:true},
   {id:"landmine_row",name:"Landmine Row",scheme:"3×6–8",sets:3,min:6,max:8,rir:"1–2",pause:"1,5 Min"},
   {id:"db_zpress",name:"DB Zpress",scheme:"3×6–8",sets:3,min:6,max:8,rir:"2",pause:"1,5 Min",warm:true},
-  {id:"oh_carry",name:"OH Carry",scheme:"3×20 m",sets:3,min:20,max:20,rir:"1",pause:"1,5 Min",repLabel:"m"},
+  {id:"oh_carry",name:"OH Carry",scheme:"3×30 m",sets:3,min:30,max:30,rir:"1",pause:"1,5 Min",repLabel:"m"},
+  {id:"tri_ext",name:"Tri Extension / French Press",scheme:"3×8–12",sets:3,min:8,max:12,rir:"1–2",pause:"1,5 Min"},
   {id:"hanging_tuck",name:"Hanging Tuck up",scheme:"3×10",sets:3,min:10,max:10,rir:"0–1",pause:"1,5 Min"}]},
  {id:"GK3",n:3,day:"Samstag",prio:"Leg",accent:"a3",ex:[
   {id:"split_squat",name:"Split squat",hint:"/side",scheme:"3×6–8/side",sets:3,min:6,max:8,rir:"1–2",pause:"1,5 Min",warm:true},
-  {id:"step_up",name:"Step up",hint:"/side",scheme:"3×6–8/side",sets:3,min:6,max:8,rir:"1–2",pause:"1,5 Min"},
-  {id:"db_rdl",name:"DB RDL",scheme:"3×8–12",sets:3,min:8,max:12,rir:"2",pause:"1,5 Min",warm:true},
+  {id:"step_up",name:"DB Step up",hint:"/side",scheme:"3×6–8/side",sets:3,min:6,max:8,rir:"1–2",pause:"1,5 Min"},
+  {id:"bb_rdl",name:"BB RDL",scheme:"3×8–12",sets:3,min:8,max:12,rir:"2",pause:"1,5 Min",warm:true},
   {id:"glute_bridge",name:"Glute Bridge",scheme:"3×6–8",sets:3,min:6,max:8,rir:"1",pause:"1,5 Min"},
   {id:"copenhagen",name:"Copenhagen Plank",hint:"/side",scheme:"3×30 s",sets:3,min:30,max:30,rir:"0–1",pause:"1,5 Min",repLabel:"s"}]}
 ];
