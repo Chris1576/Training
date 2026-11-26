@@ -34,6 +34,20 @@ const COOKIE_MAX_AGE = 400 * 24 * 60 * 60; /* ~400 Tage, Browser-Maximum */
 app.disable("x-powered-by");
 app.use(express.json({ limit: "5mb" }));
 
+/* Logo und Manifest ohne Login: Browser laden sie teils ohne Cookies. */
+app.use("/icons", express.static(path.join(__dirname, "icons"), { maxAge: "7d" }));
+app.get("/favicon.ico", function (req, res) {
+  res.set("Cache-Control", "public, max-age=604800");
+  res.sendFile(path.join(__dirname, "icons", "favicon.ico"));
+});
+app.get("/apple-touch-icon.png", function (req, res) {
+  res.sendFile(path.join(__dirname, "icons", "apple-touch-icon.png"));
+});
+app.get("/manifest.webmanifest", function (req, res) {
+  res.type("application/manifest+json");
+  res.sendFile(path.join(__dirname, "manifest.webmanifest"));
+});
+
 function timingSafeEqual(a, b) {
   const bufA = Buffer.from(String(a));
   const bufB = Buffer.from(String(b));
