@@ -301,6 +301,7 @@ tr:last-child td{border-bottom:0}
 .hs-wink{transform-box:fill-box;transform-origin:center;animation:hsWink 4.5s ease-in-out both}
 .hs-clap{opacity:0;animation:hsClap 4.5s ease-out both}
 .hs-txt{font:800 38px/1 var(--font);fill:#C8A16A;letter-spacing:-.01em;transform-box:fill-box;transform-origin:center;animation:hsTxt 4.5s ease-out both}
+.hs-name{font:800 11.5px/1 var(--font);fill:#F2F0EC;letter-spacing:.02em}
 .hs-spark{transform-box:fill-box;transform-origin:center;animation:hsSpark 4.5s ease-out both}
 @keyframes hsFade{0%{opacity:0}6%{opacity:1}89%{opacity:1}100%{opacity:0}}
 @keyframes hsWalkL{from{transform:translateX(-300px)}to{transform:translateX(0)}}
@@ -1997,7 +1998,8 @@ function hsFigure(o){
       leg("hs-legA", -10)+leg("hs-legB", 10)+
       "<rect x='-25' y='130' width='50' height='74' rx='18' fill='"+o.shirt+"'/>"+
       "<path d='M-9 131 Q0 142 9 131' stroke='"+line+"' stroke-width='2.5' fill='none' stroke-linecap='round'/>"+
-      "<path d='M-8 160h16M-8 155.5v9M8 155.5v9' stroke='#F2F0EC' stroke-width='2.6' stroke-linecap='round' opacity='.85'/>"+
+      "<path d='M-6 152h12M-6 148.5v7M6 148.5v7' stroke='#F2F0EC' stroke-width='2.2' stroke-linecap='round' opacity='.85'/>"+
+      (o.name ? "<g transform='scale("+(o.mirror?-1:1)+" 1)'><text class='hs-name' x='0' y='176' text-anchor='middle'>"+esc(o.name)+"</text></g>" : "")+
       head+
       "<g transform='translate(-22 142)'>"+arm("hs-armOut", true)+"</g>"+
       "<g transform='translate(22 142)'>"+arm("hs-armIn", false)+"</g>"+
@@ -2013,8 +2015,8 @@ function handshakeScene(){
   el.className="hs";
   el.setAttribute("aria-hidden","true");
   el.innerHTML="<svg viewBox='0 0 400 300'>"+
-    "<g class='hs-walkL'><g transform='translate(135 0)'>"+hsFigure({shirt:"#7FA394", skin:"#EDBD96", hair:"#4A3022", wink:true})+"</g></g>"+
-    "<g class='hs-walkR'><g transform='translate(265 0) scale(-1 1)'>"+hsFigure({shirt:"#B9805F", skin:"#C98D63", hair:"#1E1A18", band:true})+"</g></g>"+
+    "<g class='hs-walkL'><g transform='translate(135 0)'>"+hsFigure({shirt:"#7FA394", skin:"#EDBD96", hair:"#4A3022", wink:true, name:"Ruben"})+"</g></g>"+
+    "<g class='hs-walkR'><g transform='translate(265 0) scale(-1 1)'>"+hsFigure({shirt:"#B9805F", skin:"#C98D63", hair:"#1E1A18", band:true, name:"Chris", mirror:true})+"</g></g>"+
     "<g class='hs-clap' stroke='#E6C793' stroke-width='2.4' stroke-linecap='round'>"+
       "<path d='M200 120v-9'/><path d='M188 124l-6-6'/><path d='M212 124l6-6'/></g>"+
     "<text class='hs-txt' x='200' y='60' text-anchor='middle'>Stark!</text>"+sparks+
