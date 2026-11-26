@@ -1993,8 +1993,8 @@ function hsFigure(o){
     "<path d='M-15.5 -24 Q-16 -41 0 -41 Q16 -41 15.5 -24 L14 -12 Q11 -3 0 -2 Q-11 -3 -14 -12 Z' fill='"+o.skin+"'/>"+
     (o.beard ? "<path d='M-15 -20 Q-14 -2 0 -1.5 Q14 -2 15 -20 Q13 -11 6 -10 Q0 -13 -6 -10 Q-13 -11 -15 -20 Z' fill='"+o.hair+"' opacity='.9'/>" : "")+
     (o.stubble ? "<path d='M-14.5 -18 Q-13 -2 0 -2 Q13 -2 14.5 -18 Q12 -9 0 -8 Q-12 -9 -14.5 -18 Z' fill='"+o.hair+"' opacity='.28'/>" : "")+
-    (o.shortBeard ? "<path d='M-14.5 -18 Q-13 -2 0 -2 Q13 -2 14.5 -18 Q12 -9 0 -8 Q-12 -9 -14.5 -18 Z' fill='"+o.hair+"' opacity='.9'/>"+
-      "<path d='M-6.5 -13.5 Q0 -16 6.5 -13.5 Q0 -12.5 -6.5 -13.5 Z' fill='"+o.hair+"'/>" : "")+
+    (o.shortBeard ? "<path d='M-14.5 -18 Q-13 -2 0 -2 Q13 -2 14.5 -18 Q12 -9 0 -8 Q-12 -9 -14.5 -18 Z' fill='"+(o.beardColor||o.hair)+"' opacity='.9'/>"+
+      "<path d='M-6.5 -13.5 Q0 -16 6.5 -13.5 Q0 -12.5 -6.5 -13.5 Z' fill='"+(o.beardColor||o.hair)+"'/>" : "")+
     (o.bald
       ? "<path d='M-9 -37 Q-3 -40.5 3 -39.5' stroke='rgba(255,255,255,.35)' stroke-width='2' fill='none' stroke-linecap='round'/>"
       : "<path d='M-16 -24 Q-17 -44 0 -43.5 Q17 -44 16 -24 Q14 -33 7 -35 Q0 -32 -7 -35 Q-14 -33 -16 -24 Z' fill='"+o.hair+"'/>")+    "<g class='hs-brows' stroke='"+o.hair+"' stroke-width='2.4' stroke-linecap='round' fill='none'>"+
@@ -2032,7 +2032,7 @@ function handshakeScene(){
   el.setAttribute("aria-hidden","true");
   el.innerHTML="<svg viewBox='0 0 400 300'>"+
     "<g class='hs-walkL'><g transform='translate(126 0)'>"+hsFigure({shirt:"#1C1C1F", skin:"#D9A881", hair:"#2E1F15", wink:true, beard:true, bald:true, name:"Ruben"})+"</g></g>"+
-    "<g class='hs-walkR'><g transform='translate(274 0) scale(-1 1)'>"+hsFigure({shirt:"#26262A", skin:"#BC8459", hair:"#141211", shortBeard:true, name:"Chris", mirror:true})+"</g></g>"+
+    "<g class='hs-walkR'><g transform='translate(274 0) scale(-1 1)'>"+hsFigure({shirt:"#26262A", skin:"#BC8459", hair:"#3B2A1F", beardColor:"#141211", shortBeard:true, name:"Chris", mirror:true})+"</g></g>"+
     "<g class='hs-clap' stroke='#E6C793' stroke-width='2.2' stroke-linecap='round'>"+
       "<path d='M200 124v-9'/><path d='M188 128l-6-6'/><path d='M212 128l6-6'/></g>"+
     "<text class='hs-txt' x='200' y='60' text-anchor='middle'>Stark!</text>"+sparks+
