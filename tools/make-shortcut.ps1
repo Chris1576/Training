@@ -30,6 +30,3 @@ function Save-Shortcut($path, $appUrl, $desc) {
   Write-Host "Verknuepfung: $path"
 }
 foreach ($t in $targets) { Save-Shortcut $t $url "Trainingslog starten" }
-
-# Alte Version 1 nur im Programmordner, um bei Bedarf darauf zurueckzugreifen.
-Save-Shortcut (Join-Path $root "Trainingslog (Version 1).lnk") "$url/v1" "Trainingslog Version 1"

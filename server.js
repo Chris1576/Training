@@ -238,7 +238,7 @@ function dataStamp(d) {
   };
 }
 
-/* Version 1 kennt keinen Plan und schickt ihn nie mit — dann bleibt der gespeicherte. */
+/* Schickt ein Geraet keinen Plan mit (z. B. alter Stand im Cache), bleibt der gespeicherte. */
 function pickPlan(a, b) {
   if (!a) return b || null;
   if (!b) return a;
@@ -299,12 +299,6 @@ app.get("/", function (req, res) {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate");
   res.set("Pragma", "no-cache");
   res.sendFile(path.join(__dirname, "index.html"));
-});
-/* Version 1 bleibt unveraendert erreichbar. */
-app.get(["/v1", "/v1/"], function (req, res) {
-  res.set("Cache-Control", "no-store, no-cache, must-revalidate");
-  res.set("Pragma", "no-cache");
-  res.sendFile(path.join(__dirname, "v1", "index.html"));
 });
 app.use(express.static(__dirname, {
   index: false,

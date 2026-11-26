@@ -482,7 +482,7 @@ var ICON = {
 };
 
 /* ============================================================
-   SPEICHER — localStorage (gemeinsam mit Version 1)
+   SPEICHER — localStorage
    ============================================================ */
 var KEY = "gk3:data";
 var DRAFTKEY = "gk3:draft-v3";
@@ -1703,7 +1703,7 @@ function summaryHTML(){
   return html;
 }
 function settingsHTML(){
-  var html=sheetHead("Trainingslog · Version 2", "Einstellungen");
+  var html=sheetHead("Trainingslog", "Einstellungen");
   html+="<div class='sec'><h3 class='h2'>Abgleich</h3>"+
     "<p class='p mut'>Gespeicherte Sätze gehen automatisch auf den Server – für alle Geräte mit diesem Login.</p>"+
     "<p class='p mut' id='ghStatus'>"+(GH.lastSync?"Zuletzt abgeglichen "+fmtSync(GH.lastSync):"Noch kein Abgleich")+"</p>"+
@@ -1714,9 +1714,6 @@ function settingsHTML(){
     "<label class='btn sm' for='importFile'>Sicherung laden</label>"+
     "<input type='file' id='importFile' accept='.json,application/json' style='display:none'>"+
     "<button class='btn sm' id='exportBtn'>CSV exportieren</button></div></div>";
-  html+="<div class='sec'><h3 class='h2'>Version</h3>"+
-    "<p class='p mut'>Du nutzt Version 2. Die bisherige Version 1 bleibt mit denselben Daten erreichbar.</p>"+
-    "<a class='btn sm' href='/v1'>Alte Version (V1) öffnen</a></div>";
   html+="<div class='sec'><button class='btn sm danger' id='clearBtn'>Alle Trainingsdaten löschen</button></div>";
   return html;
 }
