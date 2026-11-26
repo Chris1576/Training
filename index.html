@@ -236,6 +236,15 @@ tr:last-child td{border-bottom:0}
 .fld.wide{grid-column:1/-1}
 .chkl{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink2);grid-column:1/-1}
 .chkl input{width:18px;height:18px;accent-color:var(--acc)}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer}
+.switch-t{display:flex;flex-direction:column;gap:2px;font-size:15px;color:var(--ink)}
+.switch-t small{font-size:12.5px;color:var(--mut)}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.switch i{position:relative;flex-shrink:0;width:48px;height:28px;border-radius:999px;background:var(--s3);border:1px solid var(--line);transition:background .2s,border-color .2s}
+.switch i::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--mut);transition:transform .2s,background .2s}
+.switch input:checked + i{background:var(--acc);border-color:var(--acc)}
+.switch input:checked + i::after{transform:translateX(20px);background:#16110A}
+.switch input:focus-visible + i{outline:1.5px solid var(--acc);outline-offset:2px}
 
 /* Sheet */
 .sheet-back{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.64);display:flex;align-items:flex-end;justify-content:center;animation:fade .18s ease}
@@ -1759,7 +1768,10 @@ function settingsHTML(){
     "<input type='file' id='importFile' accept='.json,application/json' style='display:none'>"+
     "<button class='btn sm' id='exportBtn'>CSV exportieren</button></div></div>";
   html+="<div class='sec'><h3 class='h2'>Animation</h3>"+
-    "<p class='p mut'>Spielt Feuerwerk und Handschlag mit einem Beispielwert ab. Gespeichert wird dabei nichts.</p>"+
+    "<label class='switch'><span class='switch-t'>Handschlag nach dem Feuerwerk"+
+    "<small>Zwei Figuren schütteln sich die Hände und zeigen Daumen hoch.</small></span>"+
+    "<input type='checkbox' id='hsToggle'"+(handshakeOn()?" checked":"")+"><i></i></label>"+
+    "<p class='p mut'>Der Test spielt die Rekord-Animation mit einem Beispielwert ab. Gespeichert wird dabei nichts.</p>"+
     "<button class='btn sm' id='animTest'>Rekord-Animation testen</button></div>";
   html+="<div class='sec'><button class='btn sm danger' id='clearBtn'>Alle Trainingsdaten löschen</button></div>";
   return html;
@@ -1928,11 +1940,15 @@ function celebrate(exId, set, prev){
   fireworks();
   clearTimeout(_hsTimer);
   var oldHs=document.querySelector(".hs"); if(oldHs) oldHs.remove();
-  _hsTimer=setTimeout(handshakeScene, 4700);
+  if(handshakeOn()) _hsTimer=setTimeout(handshakeScene, 4700);
 }
 
 /* ---------- Handschlag-Szene nach dem Feuerwerk ---------- */
 var _hsTimer=null;
+var HSKEY="gk3:handshake";
+function handshakeOn(){
+  try { return localStorage.getItem(HSKEY)!=="off"; } catch(e){ return true; }
+}
 /* Eine Comic-Figur, frontal, Ursprung = Körpermitte; Gliedmaßen drehen um ihren Ansatzpunkt. */
 function hsFigure(o){
   var line="rgba(0,0,0,.18)";
@@ -2430,6 +2446,11 @@ document.addEventListener("change", function(ev){
     showUnit(S.draft.unitId, S.draft.stufe, t.value); saveDraftSoon(); render(); return;
   }
   if(t.id==="exSelect"){ S.verlaufEx=t.value; render(); return; }
+  if(t.id==="hsToggle"){
+    try { localStorage.setItem(HSKEY, t.checked ? "on" : "off"); } catch(e){}
+    toast(t.checked ? "Handschlag-Animation an" : "Handschlag-Animation aus");
+    return;
+  }
   if(t.id==="importFile"){
     var f=t.files && t.files[0];
     if(!f) return;
