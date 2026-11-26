@@ -1771,8 +1771,8 @@ function celebrate(exId, set, prev){
     "<span class='cel-v mono'>"+setText(set, ex)+"</span>"+
     "<span class='cel-n'>"+esc(exLabel(exId))+" · vorher "+setText(prev, ex)+"</span>";
   document.body.appendChild(b);
-  setTimeout(function(){ b.classList.add("out"); }, 2600);
-  setTimeout(function(){ b.remove(); }, 3100);
+  setTimeout(function(){ b.classList.add("out"); }, 4400);
+  setTimeout(function(){ b.remove(); }, 4900);
   if(navigator.vibrate) try { navigator.vibrate([30,60,30,60,80]); } catch(e){}
   if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   fireworks();
@@ -1786,7 +1786,8 @@ function fireworks(){
   cv.width=W*dpr; cv.height=H*dpr;
   var ctx=cv.getContext("2d");
   ctx.scale(dpr, dpr);
-  var rockets=[], sparks=[], start=performance.now(), launches=[0,320,620,950,1250,1600];
+  var rockets=[], sparks=[], start=performance.now(),
+    launches=[0,300,600,900,1250,1600,1950,2300,2650,3000,3350,3450,3550];
   function launch(){
     rockets.push({ x:W*(0.18+Math.random()*0.64), y:H+10, vx:(Math.random()-0.5)*1.6,
       vy:-(H/62)-Math.random()*2.4, color:FW_COLORS[Math.floor(Math.random()*3)] });
