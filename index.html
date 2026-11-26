@@ -268,6 +268,50 @@ tr:last-child td{border-bottom:0}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 
 .fw{position:fixed;inset:0;width:100vw;height:100vh;z-index:90;pointer-events:none}
+
+/* Handschlag-Szene: zulaufen 0–1,4 s, Hände schütteln 1,4–2,6 s, Daumen hoch 2,6–4 s, ausblenden */
+.hs{position:fixed;inset:0;z-index:92;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;
+  padding-bottom:calc(76px + env(safe-area-inset-bottom,0px));
+  background:radial-gradient(ellipse at 50% 78%,rgba(200,161,106,.12),rgba(10,10,11,.66) 72%);
+  animation:hsFade 4.5s linear both}
+.hs svg{width:min(100vw,520px);height:auto;overflow:visible}
+.hs-legA,.hs-legB,.hs-armIn,.hs-armOut,.hs-head,.hs-brows{transform-origin:0 0}
+.hs-walkL{animation:hsWalkL 1.4s cubic-bezier(.25,.6,.35,1) both}
+.hs-walkR{animation:hsWalkR 1.4s cubic-bezier(.25,.6,.35,1) both}
+.hs-bob{animation:hsBob .35s ease-in-out 4}
+.hs-legA{animation:hsLegA .7s ease-in-out 2}
+.hs-legB{animation:hsLegB .7s ease-in-out 2}
+.hs-armIn{animation:hsArmIn 4.5s ease-in-out both}
+.hs-armOut{animation:hsArmOut 4.5s ease-in-out both}
+.hs-armOut .hs-hand{animation:hsHandOff 4.5s step-end both}
+.hs-thumb{transform-box:fill-box;transform-origin:50% 100%;animation:hsThumb 4.5s ease-out both}
+.hs-head{animation:hsHead 4.5s ease-in-out both}
+.hs-brows{animation:hsBrows 4.5s ease-in-out both}
+.hs-smile{animation:hsSmile 4.5s step-end both}
+.hs-grin{animation:hsGrin 4.5s step-end both}
+.hs-wink{transform-box:fill-box;transform-origin:center;animation:hsWink 4.5s ease-in-out both}
+.hs-clap{opacity:0;animation:hsClap 4.5s ease-out both}
+.hs-txt{font:800 38px/1 var(--font);fill:#C8A16A;letter-spacing:-.01em;transform-box:fill-box;transform-origin:center;animation:hsTxt 4.5s ease-out both}
+.hs-spark{transform-box:fill-box;transform-origin:center;animation:hsSpark 4.5s ease-out both}
+@keyframes hsFade{0%{opacity:0}6%{opacity:1}89%{opacity:1}100%{opacity:0}}
+@keyframes hsWalkL{from{transform:translateX(-300px)}to{transform:translateX(0)}}
+@keyframes hsWalkR{from{transform:translateX(300px)}to{transform:translateX(0)}}
+@keyframes hsBob{50%{transform:translateY(-4px)}}
+@keyframes hsLegA{25%{transform:rotate(20deg)}75%{transform:rotate(-20deg)}}
+@keyframes hsLegB{25%{transform:rotate(-20deg)}75%{transform:rotate(20deg)}}
+@keyframes hsArmIn{0%,31%{transform:rotate(-12deg)}38%{transform:rotate(-88deg)}42%{transform:rotate(-76deg)}46%{transform:rotate(-98deg)}
+  50%{transform:rotate(-78deg)}54%{transform:rotate(-96deg)}57%{transform:rotate(-88deg)}63%,100%{transform:rotate(-12deg)}}
+@keyframes hsArmOut{0%,58%{transform:rotate(12deg)}66%{transform:rotate(156deg)}70%{transform:rotate(138deg)}74%,100%{transform:rotate(150deg)}}
+@keyframes hsHandOff{0%{opacity:1}64%,100%{opacity:0}}
+@keyframes hsThumb{0%,63%{opacity:0;transform:scale(.3)}68%{opacity:1;transform:scale(1.3)}73%,100%{opacity:1;transform:scale(1)}}
+@keyframes hsHead{0%,36%{transform:rotate(0)}43%{transform:rotate(4deg)}50%{transform:rotate(-3deg)}57%{transform:rotate(0)}64%,100%{transform:rotate(-8deg)}}
+@keyframes hsBrows{0%,35%{transform:translateY(0)}40%,58%{transform:translateY(-3px)}64%,100%{transform:translateY(-1.5px)}}
+@keyframes hsSmile{0%{opacity:1}37%,100%{opacity:0}}
+@keyframes hsGrin{0%{opacity:0}37%,100%{opacity:1}}
+@keyframes hsWink{0%,67%{transform:scaleY(1)}70%,80%{transform:scaleY(.12)}84%,100%{transform:scaleY(1)}}
+@keyframes hsClap{0%,36%{opacity:0;transform:translateY(4px)}39%{opacity:1;transform:translateY(0)}46%,100%{opacity:0;transform:translateY(-6px)}}
+@keyframes hsTxt{0%,61%{opacity:0;transform:scale(.4) translateY(14px)}68%{opacity:1;transform:scale(1.18)}73%,89%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+@keyframes hsSpark{0%,66%{opacity:0;transform:scale(0) rotate(0)}72%{opacity:1;transform:scale(1.25) rotate(45deg)}82%{opacity:.85;transform:scale(.8) rotate(90deg)}92%,100%{opacity:0;transform:scale(0) rotate(120deg)}}
 .celebrate{position:fixed;left:50%;top:38%;z-index:91;transform:translate(-50%,-50%);pointer-events:none;
   display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;
   padding:22px 28px;border-radius:16px;background:rgba(18,18,20,.86);border:1px solid var(--accl);
@@ -1714,6 +1758,9 @@ function settingsHTML(){
     "<label class='btn sm' for='importFile'>Sicherung laden</label>"+
     "<input type='file' id='importFile' accept='.json,application/json' style='display:none'>"+
     "<button class='btn sm' id='exportBtn'>CSV exportieren</button></div></div>";
+  html+="<div class='sec'><h3 class='h2'>Animation</h3>"+
+    "<p class='p mut'>Spielt Feuerwerk und Handschlag mit einem Beispielwert ab. Gespeichert wird dabei nichts.</p>"+
+    "<button class='btn sm' id='animTest'>Rekord-Animation testen</button></div>";
   html+="<div class='sec'><button class='btn sm danger' id='clearBtn'>Alle Trainingsdaten löschen</button></div>";
   return html;
 }
@@ -1879,6 +1926,86 @@ function celebrate(exId, set, prev){
   if(navigator.vibrate) try { navigator.vibrate([30,60,30,60,80]); } catch(e){}
   if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   fireworks();
+  clearTimeout(_hsTimer);
+  var oldHs=document.querySelector(".hs"); if(oldHs) oldHs.remove();
+  _hsTimer=setTimeout(handshakeScene, 4700);
+}
+
+/* ---------- Handschlag-Szene nach dem Feuerwerk ---------- */
+var _hsTimer=null;
+/* Eine Comic-Figur, frontal, Ursprung = Körpermitte; Gliedmaßen drehen um ihren Ansatzpunkt. */
+function hsFigure(o){
+  var line="rgba(0,0,0,.18)";
+  function arm(cls, thumb){
+    return "<g class='"+cls+"'>"+
+      "<rect x='-7.5' y='-6' width='15' height='24' rx='7.5' fill='"+o.shirt+"'/>"+
+      "<rect x='-5.5' y='12' width='11' height='32' rx='5.5' fill='"+o.skin+"'/>"+
+      "<g transform='translate(0 46)'>"+
+        "<circle class='hs-hand' r='8.5' fill='"+o.skin+"' stroke='"+line+"' stroke-width='1'/>"+
+        (thumb ? "<g transform='rotate(-150)'><g class='hs-thumb'>"+
+          "<rect x='-9' y='-6' width='18' height='15' rx='6' fill='"+o.skin+"' stroke='"+line+"' stroke-width='1'/>"+
+          "<rect x='-4' y='-20' width='8' height='17' rx='4' fill='"+o.skin+"' stroke='"+line+"' stroke-width='1'/>"+
+          "<path d='M-6 -1h9M-6 3.5h9' stroke='"+line+"' stroke-width='1.4' stroke-linecap='round'/>"+
+        "</g></g>" : "")+
+      "</g></g>";
+  }
+  function leg(cls, x){
+    return "<g transform='translate("+x+" 198)'><g class='"+cls+"'>"+
+      "<rect x='-7.5' y='-2' width='15' height='58' rx='7.5' fill='#2B2B30'/>"+
+      "<g transform='translate(2 58)'>"+
+        "<path d='M-11 3 L-11 -2 Q-11 -8 -4 -8 L5 -8 Q14 -7 14 0 L14 3 Z' fill='#F2F0EC'/>"+
+        "<rect x='-11' y='1.5' width='25' height='3' rx='1.5' fill='#C8A16A'/>"+
+      "</g></g></g>";
+  }
+  var hair = o.band
+    ? "<path d='M-27 -40 Q-26 -66 0 -66 Q26 -66 27 -40 Q14 -55 0 -55 Q-14 -55 -27 -40 Z' fill='"+o.hair+"'/>"+
+      "<rect x='-28' y='-50' width='56' height='7' rx='3.5' fill='#C8A16A'/>"
+    : "<path d='M-28 -36 Q-30 -68 0 -67 Q29 -67 28 -38 Q22 -54 8 -51 Q-4 -60 -28 -36 Z' fill='"+o.hair+"'/>";
+  var head="<g transform='translate(0 128)'><g class='hs-head'>"+
+    "<rect x='-6.5' y='-10' width='13' height='12' rx='4' fill='"+o.skin+"'/>"+
+    "<circle cx='-26' cy='-32' r='6' fill='"+o.skin+"'/><circle cx='26' cy='-32' r='6' fill='"+o.skin+"'/>"+
+    "<circle cx='0' cy='-34' r='27' fill='"+o.skin+"'/>"+hair+
+    "<g class='hs-brows' stroke='"+o.hair+"' stroke-width='2.6' stroke-linecap='round' fill='none'>"+
+      "<path d='M-14 -45 Q-9 -48.5 -4 -45.5'/><path d='M4 -45.5 Q9 -48.5 14 -45'/></g>"+
+    "<ellipse cx='-9' cy='-35' rx='3.3' ry='4.3' fill='#1A1A1C'/>"+
+    "<ellipse class='"+(o.wink?"hs-wink":"")+"' cx='9' cy='-35' rx='3.3' ry='4.3' fill='#1A1A1C'/>"+
+    "<circle cx='-8' cy='-36.5' r='1.1' fill='#fff'/><circle cx='10' cy='-36.5' r='1.1' fill='#fff'/>"+
+    "<circle cx='-16' cy='-25' r='4.5' fill='#E57F6E' opacity='.35'/><circle cx='16' cy='-25' r='4.5' fill='#E57F6E' opacity='.35'/>"+
+    "<path class='hs-smile' d='M-8 -23 Q0 -16 8 -23' stroke='#5A2E22' stroke-width='2.4' fill='none' stroke-linecap='round'/>"+
+    "<g class='hs-grin'><path d='M-10.5 -25 Q0 -9 10.5 -25 Z' fill='#5A2E22'/>"+
+      "<path d='M-8.5 -24.6 L8.5 -24.6 L7.4 -21.8 L-7.4 -21.8 Z' fill='#fff'/>"+
+      "<path d='M-4.5 -15.6 Q0 -19 4.5 -15.6 Q0 -13.4 -4.5 -15.6 Z' fill='#E06A6A'/></g>"+
+    "</g></g>";
+  return "<ellipse cx='0' cy='264' rx='32' ry='5' fill='rgba(0,0,0,.4)'/>"+
+    "<g class='hs-bob'>"+
+      leg("hs-legA", -10)+leg("hs-legB", 10)+
+      "<rect x='-25' y='130' width='50' height='74' rx='18' fill='"+o.shirt+"'/>"+
+      "<path d='M-9 131 Q0 142 9 131' stroke='"+line+"' stroke-width='2.5' fill='none' stroke-linecap='round'/>"+
+      "<path d='M-8 160h16M-8 155.5v9M8 155.5v9' stroke='#F2F0EC' stroke-width='2.6' stroke-linecap='round' opacity='.85'/>"+
+      head+
+      "<g transform='translate(-22 142)'>"+arm("hs-armOut", true)+"</g>"+
+      "<g transform='translate(22 142)'>"+arm("hs-armIn", false)+"</g>"+
+    "</g>";
+}
+function handshakeScene(){
+  var old=document.querySelector(".hs"); if(old) old.remove();
+  var star="M0 -7 L1.8 -1.8 L7 0 L1.8 1.8 L0 7 L-1.8 1.8 L-7 0 L-1.8 -1.8 Z";
+  var sparks=[[128,40,0],[272,36,.12],[110,82,.24],[292,80,.06],[200,12,.18]].map(function(p){
+    return "<g transform='translate("+p[0]+" "+p[1]+")'><path class='hs-spark' style='animation-delay:"+p[2]+"s' d='"+star+"' fill='#E6C793'/></g>";
+  }).join("");
+  var el=document.createElement("div");
+  el.className="hs";
+  el.setAttribute("aria-hidden","true");
+  el.innerHTML="<svg viewBox='0 0 400 300'>"+
+    "<g class='hs-walkL'><g transform='translate(135 0)'>"+hsFigure({shirt:"#7FA394", skin:"#EDBD96", hair:"#4A3022", wink:true})+"</g></g>"+
+    "<g class='hs-walkR'><g transform='translate(265 0) scale(-1 1)'>"+hsFigure({shirt:"#B9805F", skin:"#C98D63", hair:"#1E1A18", band:true})+"</g></g>"+
+    "<g class='hs-clap' stroke='#E6C793' stroke-width='2.4' stroke-linecap='round'>"+
+      "<path d='M200 120v-9'/><path d='M188 124l-6-6'/><path d='M212 124l6-6'/></g>"+
+    "<text class='hs-txt' x='200' y='60' text-anchor='middle'>Stark!</text>"+sparks+
+    "</svg>";
+  el.addEventListener("click", function(){ el.remove(); });
+  document.body.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 4600);
 }
 function fireworks(){
   var old=document.querySelector(".fw"); if(old) old.remove();
@@ -2169,7 +2296,7 @@ document.addEventListener("pointerdown", function(ev){
 var CLICK_SEL="[data-tab],[data-unit],[data-saveset],[data-addset],[data-rmset],[data-rmextra],[data-collapse],[data-bump],[data-sug],"+
   "[data-open],[data-close],[data-cal],[data-metric],[data-openday],[data-hist],[data-pmove],[data-pdel],[data-pedit],[data-psave],"+
   "[data-pcancel],[data-padd],[data-pick],[data-cat],[data-addback],[data-addok],[data-saveall],[data-finish],"+
-  "#planReset,#ghUp,#ghForce,#backupBtn,#exportBtn,#clearBtn";
+  "#planReset,#ghUp,#ghForce,#backupBtn,#exportBtn,#clearBtn,#animTest";
 
 document.addEventListener("click", function(ev){
   var el=ev.target.closest ? ev.target.closest(CLICK_SEL) : null;
@@ -2271,6 +2398,12 @@ document.addEventListener("click", function(ev){
   if(el.id==="backupBtn"){ downloadBackup(); return; }
   if(el.id==="exportBtn"){ downloadCsv(); return; }
   if(el.id==="clearBtn"){ clearAll(); return; }
+  if(el.id==="animTest"){
+    closeSheet();
+    var demo=unitById(S.draft.unitId).ex[0];
+    celebrate(demo ? demo.id : "back_squat", {kg:"100", reps:"5"}, {kg:"97.5", reps:"5"});
+    return;
+  }
 });
 
 function applyDraftInput(t){
