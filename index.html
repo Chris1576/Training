@@ -249,6 +249,10 @@ tr:last-child td{border-bottom:0}
 .sheet-h + .sec{border-top:0;padding-top:0}
 .search{height:46px;width:100%;border-radius:var(--rs);border:1px solid var(--line);background:var(--s2);padding:0 14px;font-size:15px;outline:none}
 .search:focus{border-color:var(--accl)}
+.cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:12px -18px 2px;padding:0 18px}
+.cats::-webkit-scrollbar{display:none}
+.cats button{flex-shrink:0;padding:7px 13px;border-radius:999px;border:1px solid var(--line);font-size:13px;color:var(--mut);white-space:nowrap}
+.cats button.on{border-color:var(--accl);background:var(--accs);color:var(--ink)}
 .li{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:13px 2px;border-top:1px solid var(--line2);text-align:left;font-size:15px}
 .li:disabled{color:var(--mut2)}
 .li-s{font-size:12px;color:var(--mut);flex-shrink:0}
@@ -330,30 +334,112 @@ var META = {
   copenhagen:{incr:0,step:1,bw:true,label:"Copenhagen Plank",repLabel:"s"}
 };
 
-/* Zusätzliche gängige Übungen zum Hinzufügen */
-var LIB = {
-  kreuzheben:{incr:5,step:2.5,label:"Kreuzheben"},
-  front_squat:{incr:2.5,step:2.5,label:"Frontkniebeuge"},
-  beinpresse:{incr:5,step:5,label:"Beinpresse"},
-  beinstrecker:{incr:2.5,step:2.5,label:"Beinstrecker"},
-  beinbeuger:{incr:2.5,step:2.5,label:"Beinbeuger"},
-  hip_thrust:{incr:5,step:2.5,label:"Hip Thrust"},
-  waden_sitz:{incr:2.5,step:2.5,label:"Wadenheben sitzend"},
-  latzug:{incr:2.5,step:2.5,label:"Latzug"},
-  kabelrudern:{incr:2.5,step:2.5,label:"Kabelrudern"},
-  face_pull:{incr:2.5,step:2.5,label:"Face Pull"},
-  butterfly:{incr:2.5,step:2.5,label:"Butterfly"},
-  lh_schraeg:{incr:2.5,step:2.5,label:"LH-Schrägbankdrücken"},
-  kh_ohp:{incr:2,step:1,label:"KH-Schulterdrücken"},
-  seitheben_kabel:{incr:1.25,step:1.25,label:"Seitheben am Kabel"},
-  trizeps_kabel:{incr:2.5,step:2.5,label:"Trizepsdrücken am Kabel"},
-  kh_curl:{incr:1,step:1,label:"KH-Bizepscurl"},
-  shrugs:{incr:2.5,step:2.5,label:"Shrugs"},
-  liegestuetz:{incr:0,step:1,bw:true,label:"Liegestütz"},
-  plank:{incr:0,step:1,bw:true,label:"Plank",repLabel:"s"},
-  kabel_crunch:{incr:2.5,step:2.5,label:"Kabel-Crunch"},
-  farmers_walk:{incr:2,step:2,label:"Farmer's Walk",repLabel:"m"}
-};
+/* Übungsbibliothek zum Hinzufügen, nach Kategorien.
+   Kürzel: B = Eigengewicht (Wdh reichen), s / m / kcal = Einheit statt Wdh. */
+var CATS = ["CrossFit","Olympisch","Kettlebell","Turnen","Cardio","Beine","Brust","Rücken","Schultern","Arme","Core"];
+var LIB = {};
+function lib(cat, list){
+  list.forEach(function(e){
+    var o={ label:e[1], incr:e[2], step:e[3], cat:cat };
+    var f=e[4]||"";
+    if(f.indexOf("B")>=0) o.bw=true;
+    var u=f.replace("B","");
+    if(u) o.repLabel=u;
+    LIB[e[0]]=o;
+  });
+}
+lib("CrossFit", [
+  ["thruster","Thruster",2.5,2.5], ["cluster","Cluster (Clean + Thruster)",2.5,2.5],
+  ["wall_ball","Wall Balls",1,1], ["burpee","Burpees",0,1,"B"],
+  ["burpee_box","Burpee Box Jump Over",0,1,"B"], ["box_jump","Box Jumps",0,1,"B"],
+  ["box_step_over","Box Step Overs",2,1], ["double_under","Double Unders",0,1,"B"],
+  ["devil_press","Devil Press",2,1], ["db_snatch","DB Snatch",2,1],
+  ["db_thruster","DB Thruster",2,1], ["man_maker","Man Maker",2,1],
+  ["sandbag_clean","Sandbag to Shoulder",5,5], ["sandbag_carry","Sandbag Carry",5,5,"m"],
+  ["sled_push","Schlitten schieben",10,5,"m"], ["sled_pull","Schlitten ziehen",10,5,"m"],
+  ["farmers_walk","Farmer's Walk",2,2,"m"], ["front_rack_carry","Front Rack Carry",2.5,2.5,"m"],
+  ["db_walking_lunge","DB Walking Lunges",2,1]
+]);
+lib("Olympisch", [
+  ["snatch","Snatch (Reißen)",2.5,2.5], ["power_snatch","Power Snatch",2.5,2.5],
+  ["hang_power_snatch","Hang Power Snatch",2.5,2.5], ["squat_clean","Squat Clean",2.5,2.5],
+  ["hang_power_clean","Hang Power Clean",2.5,2.5], ["clean_jerk","Clean & Jerk",2.5,2.5],
+  ["push_press","Push Press",2.5,2.5], ["push_jerk","Push Jerk",2.5,2.5],
+  ["split_jerk","Split Jerk",2.5,2.5], ["overhead_squat","Overhead Squat",2.5,2.5],
+  ["snatch_balance","Snatch Balance",2.5,2.5], ["clean_pull","Clean Pull",5,2.5]
+]);
+lib("Kettlebell", [
+  ["kb_swing","KB Swing",4,4], ["kb_goblet","Goblet Squat",2,2],
+  ["kb_tgu","Turkish Get up",4,2], ["kb_snatch","KB Snatch",4,4],
+  ["kb_clean","KB Clean",4,4], ["kb_press","KB Press",4,2],
+  ["kb_row","KB Rudern",4,2], ["kb_halo","KB Halo",2,2]
+]);
+lib("Turnen", [
+  ["toes_to_bar","Toes to Bar",0,1,"B"], ["knees_to_elbow","Knees to Elbows",0,1,"B"],
+  ["chest_to_bar","Chest to Bar Pull up",2.5,1.25,"B"], ["kipping_pullup","Kipping Pull up",0,1,"B"],
+  ["bar_muscle_up","Bar Muscle up",0,1,"B"], ["ring_muscle_up","Ring Muscle up",0,1,"B"],
+  ["hspu","Handstand Push up",0,1,"B"], ["handstand_walk","Handstand Walk",0,1,"Bm"],
+  ["wall_walk","Wall Walks",0,1,"B"], ["rope_climb","Seilklettern",0,1,"B"],
+  ["ring_dips","Ring Dips",2.5,1.25,"B"], ["ring_row","Ring Rows",0,1,"B"],
+  ["pistol","Pistol Squats",0,1,"B"], ["l_sit","L-Sit",0,1,"Bs"],
+  ["ghd_situp","GHD Sit up",0,1,"B"], ["air_squat","Air Squats",0,1,"B"]
+]);
+lib("Cardio", [
+  ["row_m","Rudergerät",0,1,"Bm"], ["row_cal","Rudergerät (Kalorien)",0,1,"Bkcal"],
+  ["assault_bike","Assault Bike",0,1,"Bkcal"], ["bike_erg","BikeErg",0,1,"Bkcal"],
+  ["ski_erg","SkiErg",0,1,"Bkcal"], ["run","Laufen",0,1,"Bm"],
+  ["shuttle_run","Shuttle Runs",0,1,"Bm"], ["jump_rope","Seilspringen",0,1,"Bs"]
+]);
+lib("Beine", [
+  ["kreuzheben","Kreuzheben",5,2.5], ["sumo_deadlift","Sumo-Kreuzheben",5,2.5],
+  ["front_squat","Frontkniebeuge",2.5,2.5], ["box_squat","Box Squat",5,2.5],
+  ["hack_squat","Hackenschmidt-Kniebeuge",5,5], ["beinpresse","Beinpresse",5,5],
+  ["beinstrecker","Beinstrecker",2.5,2.5], ["beinbeuger","Beinbeuger",2.5,2.5],
+  ["hip_thrust","Hip Thrust",5,2.5], ["good_morning","Good Morning",2.5,2.5],
+  ["walking_lunge","Walking Lunges",2,1], ["nordic_curl","Nordic Curl",0,1,"B"],
+  ["waden_sitz","Wadenheben sitzend",2.5,2.5], ["adduktoren","Adduktorenmaschine",2.5,2.5],
+  ["abduktoren","Abduktorenmaschine",2.5,2.5]
+]);
+lib("Brust", [
+  ["lh_schraeg","LH-Schrägbankdrücken",2.5,2.5], ["close_grip_bench","Enges Bankdrücken",2.5,2.5],
+  ["brustpresse","Brustpresse",2.5,2.5], ["butterfly","Butterfly",2.5,2.5],
+  ["kh_flys","KH-Flys",1,1], ["kabel_crossover","Kabel-Crossover",2.5,2.5],
+  ["liegestuetz","Liegestütz",0,1,"B"]
+]);
+lib("Rücken", [
+  ["latzug","Latzug",2.5,2.5], ["kabelrudern","Kabelrudern",2.5,2.5],
+  ["t_bar_row","T-Bar-Rudern",2.5,2.5], ["pendlay_row","Pendlay Row",2.5,2.5],
+  ["rack_pull","Rack Pull",5,2.5], ["pullover","Überzüge (Pullover)",2.5,2.5],
+  ["face_pull","Face Pull",2.5,2.5], ["reverse_fly","Reverse Flys",1,1],
+  ["hyperext","Hyperextensions",2.5,2.5,"B"], ["shrugs","Shrugs",2.5,2.5]
+]);
+lib("Schultern", [
+  ["kh_ohp","KH-Schulterdrücken",2,1], ["arnold_press","Arnold Press",2,1],
+  ["landmine_press","Landmine Press",2.5,2.5], ["seitheben_kabel","Seitheben am Kabel",1.25,1.25],
+  ["frontheben","Frontheben",1,1], ["upright_row","Aufrechtes Rudern",2.5,2.5]
+]);
+lib("Arme", [
+  ["kh_curl","KH-Bizepscurl",1,1], ["sz_curl","SZ-Curl",2.5,2.5],
+  ["scott_curl","Scott-Curl",2.5,2.5], ["konz_curl","Konzentrationscurl",1,1],
+  ["kabel_curl","Kabelcurl",2.5,2.5], ["trizeps_kabel","Trizepsdrücken am Kabel",2.5,2.5],
+  ["trizeps_ueberkopf","Überkopf-Trizeps am Kabel",2.5,2.5], ["skullcrusher","Skull Crusher",2.5,2.5],
+  ["kickback","Trizeps-Kickback",1,1]
+]);
+lib("Core", [
+  ["plank","Plank",0,1,"Bs"], ["side_plank","Seitstütz",0,1,"Bs"],
+  ["hollow_hold","Hollow Hold",0,1,"Bs"], ["kabel_crunch","Kabel-Crunch",2.5,2.5],
+  ["ab_wheel","Ab Wheel",0,1,"B"], ["leg_raise","Hängendes Beinheben",0,1,"B"],
+  ["russian_twist","Russian Twist",1,1,"B"], ["pallof","Pallof Press",2.5,2.5],
+  ["dead_bug","Dead Bug",0,1,"B"], ["v_up","V-Ups",0,1,"B"]
+]);
+/* Kategorien der Übungen aus dem Standardplan */
+(function(){
+  var c={ Olympisch:"power_clean clean_prep", CrossFit:"oh_carry",
+    Beine:"lh_squat lh_rdl bss lunges waden back_squat split_squat step_up db_rdl bb_rdl glute_bridge",
+    Brust:"lh_bank kh_bank kh_schraeg bench dips", Rücken:"klimmzug_o klimmzug_u lh_rudern kh_rudern pullup landmine_row",
+    Schultern:"lh_ohp kh_seit db_zpress", Arme:"lh_curl kh_tri db_hammer_curl tri_ext", Core:"hanging_tuck copenhagen" };
+  Object.keys(c).forEach(function(cat){ c[cat].split(" ").forEach(function(id){ if(META[id]) META[id].cat=cat; }); });
+})();
 
 var DEFAULT_UNITS = [
  {id:"GK1",n:1,day:"Dienstag",prio:"Pull",accent:"a1",ex:[
@@ -678,6 +764,7 @@ function kindLabel(id){
   var m=metaOf(id);
   if(m.repLabel==="s") return "Zeit";
   if(m.repLabel==="m") return "Strecke";
+  if(m.repLabel==="kcal") return "Kalorien";
   if(m.bw) return "Eigengewicht";
   return "Gewicht";
 }
@@ -1517,19 +1604,37 @@ function addListHTML(){
     return "<button class='li' data-pick='"+id+"'"+(has?" disabled":"")+"><span>"+esc(lbl)+"</span><span class='li-s'>"+(has?"schon dabei":kindLabel(id))+"</span></button>";
   }
   function byLabel(a,b){ return exLabel(a).localeCompare(exLabel(b),"de"); }
-  var ownIds=Object.keys(own).sort(byLabel), rest=allLibIds().filter(function(id){ return !own[id]; }).sort(byLabel);
-  var ownHtml=ownIds.map(item).join(""), restHtml=rest.map(item).join("");
+  var groups={ Eigene:Object.keys(own) };
+  allLibIds().forEach(function(id){
+    if(own[id]) return;
+    var c=metaOf(id).cat || "Weitere";
+    (groups[c]=groups[c]||[]).push(id);
+  });
+  var order=["Eigene"].concat(CATS, ["Weitere"]), any=false;
   var html="<button class='li new' data-pick='__new'>"+ICON.plus+"<span>Neue Übung anlegen"+(sh.q?" „"+esc(sh.q)+"“":"")+"</span></button>";
-  if(ownHtml) html+="<div class='grp'>Eigene Übungen</div>"+ownHtml;
-  if(restHtml) html+="<div class='grp'>Bibliothek</div>"+restHtml;
-  if(!ownHtml && !restHtml) html+="<p class='p mut' style='padding:12px 2px'>Nichts gefunden.</p>";
+  order.forEach(function(c){
+    if(sh.cat && sh.cat!==c) return;
+    var rows=(groups[c]||[]).sort(byLabel).map(item).join("");
+    if(!rows) return;
+    any=true;
+    html+="<div class='grp'>"+(c==="Eigene"?"Eigene Übungen":esc(c))+"</div>"+rows;
+  });
+  if(!any) html+="<p class='p mut' style='padding:12px 2px'>Nichts gefunden.</p>";
   return html;
+}
+function addCatsHTML(){
+  var cur=S.sheet.cat||"", own=Object.keys(plan().lib||{}).length;
+  var list=[""].concat(own?["Eigene"]:[], CATS);
+  return list.map(function(c){
+    return "<button class='"+(c===cur?"on":"")+"' data-cat='"+esc(c)+"'>"+(c||"Alle")+"</button>";
+  }).join("");
 }
 function addSheetHTML(){
   var sh=S.sheet, u=unitById(sh.unitId);
   var head=sheetHead("Day "+u.n+" · "+esc(u.prio), "Übung hinzufügen");
   if(!sh.pick){
     return head+"<input class='search' id='addQ' type='search' placeholder='Übung suchen …' autocomplete='off' value='"+esc(sh.q||"")+"'>"+
+      "<div class='cats' id='addCats'>"+addCatsHTML()+"</div>"+
       "<div id='addList'>"+addListHTML()+"</div>";
   }
   var isNew=sh.pick==="__new";
@@ -1538,7 +1643,8 @@ function addSheetHTML(){
     ? "<label class='fld wide'><span>Name</span><input id='newName' type='text' autocomplete='off' value='"+esc(sh.q||"")+"' placeholder='z. B. Latzug eng'></label>"+
       "<label class='fld wide'><span>Art</span><select id='newKind'>"+
       "<option value='kg'>Gewicht · kg × Wdh</option><option value='bw'>Eigengewicht · Wdh</option>"+
-      "<option value='s'>Zeit · Sekunden</option><option value='m'>Strecke · Meter</option></select></label>"
+      "<option value='s'>Zeit · Sekunden</option><option value='m'>Strecke · Meter</option>"+
+      "<option value='kcal'>Kalorien · kcal</option></select></label>"
     : "<div class='fld wide'><span>Übung</span><div class='pl-t' style='font-size:17px;font-weight:600'>"+esc(exLabel(sh.pick))+"</div></div>";
   form+="<label class='fld'><span>Sätze</span><input id='addSets' type='number' inputmode='numeric' min='1' max='10' value='"+(def.sets||3)+"'></label>"+
     "<label class='fld'><span>Ziel von</span><input id='addMin' type='number' inputmode='numeric' min='0' value='"+(def.min==null?"":def.min)+"' placeholder='Max'></label>"+
@@ -1955,7 +2061,7 @@ function confirmAdd(){
     id="c_"+slug(name)+"_"+Date.now().toString(36).slice(-4);
     var entry={ label:name, incr:kind==="kg"?2.5:kind==="m"?2:0, step:kind==="kg"?2.5:1 };
     if(kind!=="kg" && kind!=="m") entry.bw=true;
-    if(kind==="s" || kind==="m") entry.repLabel=kind;
+    if(kind==="s" || kind==="m" || kind==="kcal") entry.repLabel=kind;
     editablePlan().lib[id]=entry;
     S.data.plan.updatedAt=Date.now();
   }
@@ -2065,7 +2171,7 @@ document.addEventListener("pointerdown", function(ev){
 
 var CLICK_SEL="[data-tab],[data-unit],[data-saveset],[data-addset],[data-rmset],[data-rmextra],[data-collapse],[data-bump],[data-sug],"+
   "[data-open],[data-close],[data-cal],[data-metric],[data-openday],[data-hist],[data-pmove],[data-pdel],[data-pedit],[data-psave],"+
-  "[data-pcancel],[data-padd],[data-pick],[data-addback],[data-addok],[data-saveall],[data-finish],"+
+  "[data-pcancel],[data-padd],[data-pick],[data-cat],[data-addback],[data-addok],[data-saveall],[data-finish],"+
   "#planReset,#ghUp,#ghForce,#backupBtn,#exportBtn,#clearBtn";
 
 document.addEventListener("click", function(ev){
@@ -2116,6 +2222,12 @@ document.addEventListener("click", function(ev){
   }
   if((v=el.getAttribute("data-padd"))){ openSheet({type:"add", unitId:v, mode:"plan", pick:null, q:""}); return; }
   if((v=el.getAttribute("data-pick"))){ S.sheet.pick=v; renderSheet(); return; }
+  if(el.hasAttribute("data-cat") && S.sheet){
+    S.sheet.cat=el.getAttribute("data-cat");
+    var ac=document.getElementById("addCats"); if(ac) ac.innerHTML=addCatsHTML();
+    var al=document.getElementById("addList"); if(al) al.innerHTML=addListHTML();
+    return;
+  }
   if(el.hasAttribute("data-addback")){ S.sheet.pick=null; renderSheet(); return; }
   if(el.hasAttribute("data-addok")){ confirmAdd(); return; }
   if(el.hasAttribute("data-saveall")){
