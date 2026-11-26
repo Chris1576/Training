@@ -119,6 +119,13 @@ main{max-width:720px;margin:0 auto;padding:20px 16px calc(108px + env(safe-area-
 .ex-state{flex-shrink:0;min-width:42px;height:28px;padding:0 9px;border-radius:999px;border:1px solid var(--line);display:grid;place-items:center;font-size:12px;color:var(--ink2)}
 .ex-state.done{background:var(--acc);border-color:var(--acc);color:#16110A}
 .ex-state.done svg.i{width:15px;height:15px;stroke-width:2.4}
+.mxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px;padding:0 16px 14px;margin-top:-4px}
+.mxgrid:empty{display:none}
+.mx{display:flex;flex-direction:column;gap:2px;padding:8px 10px;background:var(--s2);border:1px solid var(--line2);border-radius:var(--rs);min-width:0}
+.mx-n{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.mx-v{font-size:13.5px;font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+.mx-t{font-size:11.5px;color:var(--acc);overflow-wrap:anywhere}
+.mx-t .pr{margin-left:4px;vertical-align:1px}
 .sugrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px 14px 46px;margin-top:-6px}
 .sug-t{font-size:12.5px;color:var(--mut);min-width:0}
 .sug{flex-shrink:0;font-size:12.5px;font-weight:600;color:var(--acc);border:1px solid var(--accl);background:var(--accs);border-radius:999px;padding:6px 11px;white-space:nowrap}
@@ -1069,6 +1076,19 @@ function exStateHTML(ex){
   var all = sets.length && n>=sets.length;
   return "<span class='ex-state"+(all?" done":"")+"'>"+(all?ICON.check:"<span class='mono'>"+n+"/"+sets.length+"</span>")+"</span>";
 }
+/* Höchstwert je Satz (vor dem gewählten Tag) und der heute gespeicherte Wert. */
+function maxGridHTML(ex, lp){
+  var n=Math.max((S.draft.entries[ex.id]||[]).length, lp ? lp.sets.length : 0), cells="";
+  for(var i=0;i<n;i++){
+    var mx=lp && lp.sets[i], td=savedSetAt(ex.id, i);
+    if(!setHasValue(mx) && !setHasValue(td)) continue;
+    cells+="<div class='mx'><span class='mx-n'>Satz "+(i+1)+"</span>"+
+      "<span class='mx-v mono'>"+(setHasValue(mx) ? setText(mx, ex) : "–")+"</span>"+
+      (setHasValue(td) ? "<span class='mx-t mono'>Heute "+setText(td, ex)+(isBetterSet(td, mx)&&setHasValue(mx)?" <span class='pr'>PR</span>":"")+"</span>" : "")+
+      "</div>";
+  }
+  return "<div class='mxgrid'>"+cells+"</div>";
+}
 function exCardHTML(ex, idx, best){
   var d=S.draft, m=metaOf(ex.id), sets=d.entries[ex.id]||[];
   var lp=best[ex.id], top=lp ? topSetOf(lp.sets) : null;
@@ -1080,7 +1100,6 @@ function exCardHTML(ex, idx, best){
 
   var meta=[esc(schemeText(ex))];
   if(ex.pause) meta.push(esc(ex.pause)+" Pause");
-  if(top) meta.push("Best "+setText(top, ex));
 
   var html="<section class='ex"+(collapsed?"":" open")+"' data-card='"+ex.id+"'>"+
     "<div class='ex-head' data-collapse='"+ex.id+"'>"+
@@ -1088,7 +1107,7 @@ function exCardHTML(ex, idx, best){
     "<span class='ex-main'><span class='ex-name'>"+esc(ex.name)+(ex.hint?" <i>"+esc(ex.hint)+"</i>":"")+
     (ex.extra?"<em class='tag'>Heute</em>":"")+"</span>"+
     "<span class='ex-meta'>"+meta.join(" · ")+"</span></span>"+
-    exStateHTML(ex)+"</div>";
+    exStateHTML(ex)+"</div>"+maxGridHTML(ex, lp);
   if(sug){
     html+="<div class='sugrow'><span class='sug-t'>"+esc(sug.why)+"</span>"+
       (sug.kg!=null ? "<button class='sug' data-sug='"+ex.id+"|"+sug.kg+"'>"+fmt(sug.kg)+" kg</button>" : "")+"</div>";
@@ -1181,7 +1200,10 @@ function patchTraining(){
       var c=row.querySelector(".cmp"); if(c) c.outerHTML=cmpHTML(lp && lp.sets[i], lp && lp.dates && lp.dates[i], s, ex);
     });
     var card=document.querySelector("[data-card='"+ex.id+"']");
-    if(card){ var st=card.querySelector(".ex-state"); if(st) st.outerHTML=exStateHTML(ex); }
+    if(card){
+      var st=card.querySelector(".ex-state"); if(st) st.outerHTML=exStateHTML(ex);
+      var mg=card.querySelector(".mxgrid"); if(mg) mg.outerHTML=maxGridHTML(ex, lp);
+    }
   });
   var days=document.getElementById("days"); if(days) days.innerHTML=daysHTML();
   var sp=document.getElementById("sessionprog"); if(sp) sp.innerHTML=sessionProgHTML();
