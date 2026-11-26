@@ -234,7 +234,15 @@ function dataStamp(d) {
     sessions: d && Array.isArray(d.sessions) ? d.sessions : [],
     updatedAt: Number(d && d.updatedAt) || 0,
     wipedAt: Number(d && d.wipedAt) || 0,
+    plan: (d && d.plan) || null,
   };
+}
+
+/* Version 1 kennt keinen Plan und schickt ihn nie mit — dann bleibt der gespeicherte. */
+function pickPlan(a, b) {
+  if (!a) return b || null;
+  if (!b) return a;
+  return (Number(b.updatedAt) || 0) > (Number(a.updatedAt) || 0) ? b : a;
 }
 
 function reconcile(a, b) {
@@ -242,9 +250,11 @@ function reconcile(a, b) {
   if (!a) return dataStamp(b);
   var A = dataStamp(a);
   var B = dataStamp(b);
-  if (B.wipedAt && B.wipedAt >= A.updatedAt && B.wipedAt >= A.wipedAt) return B;
-  if (A.wipedAt && A.wipedAt >= B.updatedAt && A.wipedAt >= B.wipedAt) return A;
-  return {
+  var plan = pickPlan(A.plan, B.plan);
+  var out;
+  if (B.wipedAt && B.wipedAt >= A.updatedAt && B.wipedAt >= A.wipedAt) out = B;
+  else if (A.wipedAt && A.wipedAt >= B.updatedAt && A.wipedAt >= B.wipedAt) out = A;
+  else out = {
     startDate:
       !A.startDate || (B.startDate && B.startDate < A.startDate)
         ? B.startDate || A.startDate
@@ -253,6 +263,9 @@ function reconcile(a, b) {
     updatedAt: Math.max(A.updatedAt, B.updatedAt),
     wipedAt: Math.max(A.wipedAt, B.wipedAt),
   };
+  out.plan = plan;
+  if (!out.plan) delete out.plan;
+  return out;
 }
 
 function earliest(a, b) {
@@ -286,6 +299,12 @@ app.get("/", function (req, res) {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate");
   res.set("Pragma", "no-cache");
   res.sendFile(path.join(__dirname, "index.html"));
+});
+/* Version 1 bleibt unveraendert erreichbar. */
+app.get(["/v1", "/v1/"], function (req, res) {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.set("Pragma", "no-cache");
+  res.sendFile(path.join(__dirname, "v1", "index.html"));
 });
 app.use(express.static(__dirname, {
   index: false,

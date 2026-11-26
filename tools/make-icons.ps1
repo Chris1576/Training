@@ -34,16 +34,16 @@ function Draw-Logo($size, $rounded) {
 
   if ($rounded) { $bg = RoundRect 24 24 976 976 220 }
   else { $bg = RoundRect 0 0 1024 1024 0 }
-  $grad = New-Object System.Drawing.Drawing2D.LinearGradientBrush (New-Object System.Drawing.PointF 0, 0), (New-Object System.Drawing.PointF 0, 1024), (Color "#1E2523"), (Color "#0E1110")
+  $grad = New-Object System.Drawing.Drawing2D.LinearGradientBrush (New-Object System.Drawing.PointF 0, 0), (New-Object System.Drawing.PointF 0, 1024), (Color "#1C1C1F"), (Color "#0A0A0B")
   $g.FillPath($grad, $bg)
   if ($rounded) {
-    $pen = New-Object System.Drawing.Pen (Color "#2B322E"), 8
+    $pen = New-Object System.Drawing.Pen (Color "#2A2A2E"), 8
     $g.DrawPath($pen, $bg)
   }
 
-  $teal = New-Object System.Drawing.SolidBrush (Color "#4FC8B4")
-  $tealDark = New-Object System.Drawing.SolidBrush (Color "#2F8F80")
-  $ink = New-Object System.Drawing.SolidBrush (Color "#E8ECE9")
+  $teal = New-Object System.Drawing.SolidBrush (Color "#C8A16A")
+  $tealDark = New-Object System.Drawing.SolidBrush (Color "#8C6F47")
+  $ink = New-Object System.Drawing.SolidBrush (Color "#F2F0EC")
 
   $cy = 470
   # Stange
@@ -59,7 +59,7 @@ function Draw-Logo($size, $rounded) {
   }
 
   # Pull / Push / Leg
-  $cols = @("#4FC8B4", "#E08356", "#8FA0EE")
+  $cols = @("#7FA394", "#B9805F", "#7F8DB5")
   for ($i = 0; $i -lt 3; $i++) {
     $b = New-Object System.Drawing.SolidBrush (Color $cols[$i])
     $g.FillPath($b, (RoundRect (338 + $i * 122) 705 104 30 15))
