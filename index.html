@@ -782,7 +782,8 @@ function editablePlan(){
   if(!S.data.plan.lib) S.data.plan.lib = {};
   return S.data.plan;
 }
-function unitById(id){ var u=units(); for(var i=0;i<u.length;i++) if(u[i].id===id) return u[i]; return u[0]; }
+function findUnit(id){ var u=units(); for(var i=0;i<u.length;i++) if(u[i].id===id) return u[i]; return null; }
+function unitById(id){ return findUnit(id) || units()[0]; }
 function findIn(list, id){
   for(var i=0;i<list.length;i++) for(var j=0;j<list[i].ex.length;j++) if(list[i].ex[j].id===id) return list[i].ex[j];
   return null;
@@ -2271,13 +2272,20 @@ function downloadFile(name, text, mime){
     return true;
   }catch(e){ return false; }
 }
+function csvCell(v){
+  var s=String(v==null?"":v);
+  return /[;"\r\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
+function csvNum(v){ return v==null ? "" : String(v).replace(".",","); }
 function downloadCsv(){
-  var lines=["Datum;Woche;Einheit;Uebung;Satz;Wdh;kg;RIR"];
+  var lines=["Datum;Woche;Einheit;Uebung;Satz;Wert;Masseinheit;kg;RIR"];
   trainedSessions().forEach(function(s){
+    var u=findUnit(s.unit), unitName=u ? u.prio+" (Day "+u.n+")" : s.unit;
     Object.keys(s.sets||{}).forEach(function(ex){
+      var label=exLabel(ex), measure=setUnit(exDef(ex));
       (s.sets[ex]||[]).forEach(function(x,i){
         if(!setHasValue(x)) return;
-        lines.push([s.date,s.week,s.unit,exLabel(ex),i+1,x.reps,x.kg,x.rir].join(";"));
+        lines.push([s.date, s.week, unitName, label, i+1, csvNum(x.reps), measure, csvNum(x.kg), x.rir].map(csvCell).join(";"));
       });
     });
   });
