@@ -1397,17 +1397,23 @@ function seriesFor(exId){
     return p;
   });
 }
-function weekStreak(){
-  var weeks={};
-  trainedSessions().forEach(function(s){ weeks[mondayOf(s.date)]=1; });
-  var dt=dateObj(mondayOf(today())), n=0;
-  if(!weeks[ymd(dt)]) dt.setDate(dt.getDate()-7);
-  while(weeks[ymd(dt)]){ n++; dt.setDate(dt.getDate()-7); }
-  return n;
-}
-function thisWeekCount(){
-  var mon=mondayOf(today());
-  return trainedSessions().filter(function(s){ return mondayOf(s.date)===mon; }).length;
+function monthStats(base){
+  var list=trainedSessions().filter(function(s){ return s.date.slice(0,7)===base; });
+  var vol=0, weeks={};
+  list.forEach(function(s){
+    weeks[mondayOf(s.date)]=1;
+    Object.keys(s.sets||{}).forEach(function(k){ vol+=tonnage(filledSets(s.sets[k])); });
+  });
+  var t=today(), y=Number(base.slice(0,4)), mo=Number(base.slice(5,7));
+  var days=base<t.slice(0,7) ? new Date(y, mo, 0).getDate() : base===t.slice(0,7) ? Number(t.slice(8,10)) : 0;
+  var avg=days ? list.length/(days/7) : 0;
+  var streak=0, run=0, prev=null;
+  Object.keys(weeks).sort().forEach(function(w){
+    run=(prev && Math.round((dateObj(w)-dateObj(prev))/864e5)===7) ? run+1 : 1;
+    if(run>streak) streak=run;
+    prev=w;
+  });
+  return {count:list.length, vol:vol, avg:(Math.round(avg*10)/10).toFixed(1).replace(".",","), streak:streak};
 }
 
 /* ---------- Verlauf ---------- */
@@ -1472,13 +1478,12 @@ function metricValText(v, metric, ex){
 function verlaufHTML(){
   var sessions=trainedSessions();
   var head="<div class='pagehead'><span class='kicker'>Übersicht</span><h1 class='h1'>Verlauf</h1></div>";
-  var totalVol=0;
-  sessions.forEach(function(s){ Object.keys(s.sets||{}).forEach(function(k){ totalVol+=tonnage(filledSets(s.sets[k])); }); });
-  var vol=fmtVol(totalVol).split(" ");
+  var m=monthStats(S.calMonth || today().slice(0,7));
+  var vol=fmtVol(m.vol).split(" ");
   var kpis="<div class='kpis'>"+
-    kpi("Diese Woche", thisWeekCount(), "/ "+units().length)+
-    kpi("Serie", weekStreak(), weekStreak()===1?"Woche":"Wochen")+
-    kpi("Einheiten", sessions.length)+
+    kpi("Ø pro Woche", m.avg)+
+    kpi("Längste Serie", m.streak, m.streak===1?"Woche":"Wochen")+
+    kpi("Einheiten", m.count)+
     kpi("Volumen", vol[0], vol[1])+"</div>";
   if(!sessions.length){
     return head+kpis+calendarHTML()+"<div class='card empty'><p class='h3'>Noch keine Einheit erfasst</p>"+
