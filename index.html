@@ -632,6 +632,26 @@ function mergeSetArrays(a, b, savedA, savedB){
   }
   return out;
 }
+/* trim[exId] = {n, at}: Saetze ab Index n wurden um "at" entfernt und
+   kommen nur zurueck, wenn sie danach neu gespeichert wurden. */
+function mergeTrim(a, b){
+  var out={};
+  [a||{}, b||{}].forEach(function(t){
+    Object.keys(t).forEach(function(ex){
+      if(!out[ex] || (Number(t[ex].at)||0) > (Number(out[ex].at)||0)) out[ex]=t[ex];
+    });
+  });
+  return out;
+}
+function applyTrim(sets, trim){
+  Object.keys(trim).forEach(function(ex){
+    var arr=sets[ex], t=trim[ex];
+    if(!arr) return;
+    var len=Number(t.n)||0;
+    for(var i=len;i<arr.length;i++) if(setHasVal(arr[i]) && setStamp(arr[i],0)>(Number(t.at)||0)) len=i+1;
+    sets[ex]=arr.slice(0, len);
+  });
+}
 /* Gleicher Tag + gleiche Einheit = derselbe Eintrag. Pro Satzindex
    gewinnt der juengere savedAt — andere Saetze bleiben erhalten. */
 function mergeSessions(a,b){
@@ -646,8 +666,11 @@ function mergeSessions(a,b){
     Object.keys(keys).forEach(function(ex){
       sets[ex]=mergeSetArrays((s.sets||{})[ex], (alt.sets||{})[ex], s.savedAt, alt.savedAt);
     });
+    var trim=mergeTrim(s.trim, alt.trim);
+    applyTrim(sets, trim);
     map[k]={ id:newer.id, date:newer.date, unit:newer.unit, week:newer.week,
              stufe:newer.stufe, sets:sets, savedAt:Math.max(s.savedAt||0, alt.savedAt||0) };
+    if(Object.keys(trim).length) map[k].trim=trim;
   });
   return Object.keys(map).map(function(k){ return map[k]; })
     .sort(function(x,y){ return x.date<y.date?-1:1; });
@@ -664,7 +687,8 @@ function dataStamp(d){
 function pickPlan(a, b){
   if(!a) return b || null;
   if(!b) return a;
-  return (Number(b.updatedAt)||0) > (Number(a.updatedAt)||0) ? b : a;
+  var win=(Number(b.updatedAt)||0) > (Number(a.updatedAt)||0) ? b : a, lose=win===a ? b : a;
+  return Object.assign({}, win, { lib:Object.assign({}, lose.lib||{}, win.lib||{}) });
 }
 /* Gemeinsamer Stand: ein neueres Leeren gewinnt, sonst Einheiten zusammenfuehren. */
 function reconcile(a, b){
@@ -1238,7 +1262,7 @@ function maxGridHTML(ex, lp){
     if(!setHasValue(mx) && !setHasValue(td)) continue;
     cells+="<div class='mx'><span class='mx-n'>Satz "+(i+1)+"</span>"+
       "<span class='mx-v mono'>"+(setHasValue(mx) ? setText(mx, ex) : "–")+"</span>"+
-      (setHasValue(td) ? "<span class='mx-t mono'>Heute "+setText(td, ex)+(isBetterSet(td, mx)&&setHasValue(mx)?" <span class='pr'>PR</span>":"")+"</span>" : "")+
+      (setHasValue(td) ? "<span class='mx-t mono'>"+(S.draft.date===today() ? "Heute" : dateShort(S.draft.date))+" "+setText(td, ex)+(isBetterSet(td, mx)&&setHasValue(mx)?" <span class='pr'>PR</span>":"")+"</span>" : "")+
       "</div>";
   }
   return "<div class='mxgrid'>"+cells+"</div>";
@@ -1573,7 +1597,7 @@ function recordRowHTML(id){
   if(r.reps && Number(r.top.kg)>0) sub.push("Max "+fmt(Number(r.reps.reps))+" "+setUnit(ex)+(Number(r.reps.kg)>0?" @ "+fmt(Number(r.reps.kg))+" kg":""));
   return "<button class='rowi' data-hist='"+id+"'>"+
     "<span class='rowi-main'><span class='rowi-t'>"+esc(exLabel(id))+"</span>"+
-    "<span class='rowi-s'>"+(sub.length?sub.join(" · "):r.n+" Sätze erfasst")+"</span></span>"+
+    "<span class='rowi-s'>"+(sub.length?sub.join(" · "):r.n+(r.n===1?" Satz erfasst":" Sätze erfasst"))+"</span></span>"+
     "<span class='rowi-v'><b>"+setText(r.top, ex)+"</b><span class='rowi-s'>"+dateShort(r.topDate)+"</span></span></button>";
 }
 function rekordeHTML(){
@@ -1759,7 +1783,7 @@ function summaryHTML(){
         return "<div class='rowi'><span class='rowi-main'><span class='rowi-t'>"+esc(p.ex.name)+" <span class='pr'>PR</span></span>"+
           "<span class='rowi-s'>vorher "+setText(p.before, p.ex)+"</span></span><span class='rowi-v'><b>"+setText(p.set, p.ex)+"</b></span></div>";
       }).join("")+"</div>"
-    : "<p class='p mut'>"+(r.sets?"Heute kein neuer Bestwert – Konstanz zählt genauso.":"Noch keine Sätze gespeichert.")+"</p>")+"</div>";
+    : "<p class='p mut'>"+(r.sets?"Kein neuer Bestwert – Konstanz zählt genauso.":"Noch keine Sätze gespeichert.")+"</p>")+"</div>";
   html+="<button class='btn pri' style='width:100%;margin-top:6px' data-finish='1'>Fertig</button>";
   return html;
 }
@@ -1852,8 +1876,10 @@ function writeSetIntoSession(date, unitId, stufe, exId, index, written){
   while(sets[exId].length<need) sets[exId].push(emptySetSlot());
   sets[exId][index]=written;
   S.data.sessions=S.data.sessions.filter(function(sess){ return !(sess.date===date && sess.unit===unitId); });
-  S.data.sessions.push({id:date+"-"+unitId,date:date,unit:unitId,week:week,stufe:stufe||"A",
-    sets:sets,savedAt:written.savedAt||Date.now()});
+  var sess={id:date+"-"+unitId,date:date,unit:unitId,week:week,stufe:stufe||"A",
+    sets:sets,savedAt:written.savedAt||Date.now()};
+  if(existing && existing.trim) sess.trim=existing.trim;
+  S.data.sessions.push(sess);
   S.data.sessions=mergeSessions(S.data.sessions, S.data.sessions);
   S.data.updatedAt=written.savedAt||Date.now();
 }
@@ -2116,8 +2142,10 @@ function trimSessionSets(date, unitId, exId, count){
   sets[exId]=sets[exId].slice(0, count);
   var now=Date.now();
   S.data.sessions=S.data.sessions.filter(function(sess){ return !(sess.date===date && sess.unit===unitId); });
+  var trim=Object.assign({}, existing.trim||{});
+  trim[exId]={ n:count, at:now };
   S.data.sessions.push({ id:existing.id||(date+"-"+unitId), date:date, unit:unitId,
-    week:existing.week, stufe:existing.stufe||"A", sets:sets, savedAt:now });
+    week:existing.week, stufe:existing.stufe||"A", sets:sets, savedAt:now, trim:trim });
   S.data.sessions=mergeSessions(S.data.sessions, S.data.sessions);
   S.data.updatedAt=now;
   return true;
@@ -2133,7 +2161,7 @@ function removeDraftSet(exId){
     return !(p.date===S.draft.date && p.unit===S.draft.unitId && p.ex===exId && p.index>=arr.length);
   });
   var changed=trimSessionSets(S.draft.date, S.draft.unitId, exId, arr.length);
-  parkDraft(); persistAllNow(); render();
+  parkDraft(); render(); persistAllNow();
   if(changed) syncSoon(); else saveDraftSoon();
 }
 function removeExtra(exId){
@@ -2491,10 +2519,14 @@ document.addEventListener("change", function(ev){
       try{
         var obj=JSON.parse(r.result);
         if(!obj || !Array.isArray(obj.sessions)) throw new Error("Format");
-        if(!confirm("Sicherung mit "+obj.sessions.length+" Einheiten laden? Die aktuellen Daten auf diesem Gerät werden ersetzt.")) return;
-        S.data={ startDate:obj.startDate||null, sessions:obj.sessions, plan:obj.plan||S.data.plan };
+        if(!confirm("Sicherung mit "+obj.sessions.length+" Einheiten laden? Sie wird mit den vorhandenen Einheiten zusammengeführt, es geht nichts verloren.")) return;
+        var cur=S.data, now=Date.now();
+        var starts=[cur.startDate, obj.startDate].filter(Boolean).sort();
+        S.data={ startDate:starts[0]||null, sessions:mergeSessions(cur.sessions||[], obj.sessions),
+          updatedAt:now, wipedAt:Number(cur.wipedAt)||0, plan:cur.plan };
+        if(!S.data.plan && planValid(obj.plan)) S.data.plan=Object.assign(clone(obj.plan), { updatedAt:now });
         if(!S.data.plan) delete S.data.plan;
-        persist().then(function(){ refreshDraft(); closeSheet(); render(); toast("Sicherung geladen"); });
+        persist().then(function(){ refreshDraft(); closeSheet(); render(); toast("Sicherung geladen"); syncSoon(); });
       }catch(e){ toast("Datei nicht lesbar"); }
     };
     r.readAsText(f);

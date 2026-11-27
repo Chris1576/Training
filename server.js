@@ -145,23 +145,26 @@ function ensureDataFile() {
   }
 }
 
+/* Nur "Datei fehlt" gilt als leer. Eine kaputte Datei wirft, damit ein PUT
+   den Verlauf nicht mit dem Stand eines einzelnen Geraets ueberschreibt. */
 function readData() {
-  try {
-    if (!fs.existsSync(DATA_FILE)) return null;
-    const raw = fs.readFileSync(DATA_FILE, "utf8");
-    if (!raw.trim()) return null;
-    return JSON.parse(raw);
-  } catch (e) {
-    console.error("readData:", e.message);
-    return null;
-  }
+  if (!fs.existsSync(DATA_FILE)) return null;
+  const raw = fs.readFileSync(DATA_FILE, "utf8");
+  if (!raw.trim()) throw new Error("Datendatei ist leer");
+  return JSON.parse(raw);
 }
 
 function writeData(obj) {
   const dir = path.dirname(DATA_FILE);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   const tmp = DATA_FILE + ".tmp";
-  fs.writeFileSync(tmp, JSON.stringify(obj, null, 1));
+  const fd = fs.openSync(tmp, "w");
+  try {
+    fs.writeSync(fd, JSON.stringify(obj, null, 1));
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
   fs.renameSync(tmp, DATA_FILE);
 }
 
@@ -190,6 +193,28 @@ function mergeSetArrays(a, b, savedA, savedB) {
   }
   return out;
 }
+/* trim[exId] = {n, at}: Saetze ab Index n wurden um "at" entfernt und
+   kommen nur zurueck, wenn sie danach neu gespeichert wurden. */
+function mergeTrim(a, b) {
+  const out = {};
+  [a || {}, b || {}].forEach(function (t) {
+    Object.keys(t).forEach(function (ex) {
+      if (!out[ex] || (Number(t[ex].at) || 0) > (Number(out[ex].at) || 0)) out[ex] = t[ex];
+    });
+  });
+  return out;
+}
+function applyTrim(sets, trim) {
+  Object.keys(trim).forEach(function (ex) {
+    const arr = sets[ex];
+    const t = trim[ex];
+    if (!arr) return;
+    let len = Number(t.n) || 0;
+    for (let i = len; i < arr.length; i++)
+      if (setHasVal(arr[i]) && setStamp(arr[i], 0) > (Number(t.at) || 0)) len = i + 1;
+    sets[ex] = arr.slice(0, len);
+  });
+}
 /* Gleicher Tag + gleiche Einheit = derselbe Eintrag. Pro Satzindex
    gewinnt der juengere savedAt — andere Saetze bleiben erhalten. */
 function mergeSessions(a, b) {
@@ -209,6 +234,8 @@ function mergeSessions(a, b) {
     Object.keys(keys).forEach(function (ex) {
       sets[ex] = mergeSetArrays((s.sets || {})[ex], (alt.sets || {})[ex], s.savedAt, alt.savedAt);
     });
+    const trim = mergeTrim(s.trim, alt.trim);
+    applyTrim(sets, trim);
     map[k] = {
       id: newer.id,
       date: newer.date,
@@ -218,6 +245,7 @@ function mergeSessions(a, b) {
       sets: sets,
       savedAt: Math.max(s.savedAt || 0, alt.savedAt || 0),
     };
+    if (Object.keys(trim).length) map[k].trim = trim;
   });
   return Object.keys(map)
     .map(function (k) {
@@ -242,7 +270,9 @@ function dataStamp(d) {
 function pickPlan(a, b) {
   if (!a) return b || null;
   if (!b) return a;
-  return (Number(b.updatedAt) || 0) > (Number(a.updatedAt) || 0) ? b : a;
+  const win = (Number(b.updatedAt) || 0) > (Number(a.updatedAt) || 0) ? b : a;
+  const lose = win === a ? b : a;
+  return Object.assign({}, win, { lib: Object.assign({}, lose.lib || {}, win.lib || {}) });
 }
 
 function reconcile(a, b) {
@@ -277,7 +307,12 @@ function earliest(a, b) {
 /* ---------- API ---------- */
 app.get("/api/data", function (req, res) {
   res.set("Cache-Control", "no-store");
-  res.json(readData());
+  try {
+    res.json(readData());
+  } catch (e) {
+    console.error("readData:", e.message);
+    res.status(500).json({ error: "Datendatei nicht lesbar" });
+  }
 });
 
 function saveHandler(req, res) {
@@ -295,18 +330,11 @@ app.put("/api/data", saveHandler);
 app.post("/api/data", saveHandler);
 
 /* ---------- App-Auslieferung ---------- */
-app.get("/", function (req, res) {
+app.get(["/", "/index.html"], function (req, res) {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate");
   res.set("Pragma", "no-cache");
   res.sendFile(path.join(__dirname, "index.html"));
 });
-app.use(express.static(__dirname, {
-  index: false,
-  setHeaders: function (res, filePath) {
-    if (/\.(html|js)$/i.test(filePath))
-      res.set("Cache-Control", "no-store, no-cache, must-revalidate");
-  },
-}));
 
 ensureDataFile();
 app.listen(PORT, function () {
