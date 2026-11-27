@@ -1405,8 +1405,9 @@ function monthStats(base){
     Object.keys(s.sets||{}).forEach(function(k){ vol+=tonnage(filledSets(s.sets[k])); });
   });
   var t=today(), y=Number(base.slice(0,4)), mo=Number(base.slice(5,7));
-  var days=base<t.slice(0,7) ? new Date(y, mo, 0).getDate() : base===t.slice(0,7) ? Number(t.slice(8,10)) : 0;
-  var avg=days ? list.length/(days/7) : 0;
+  var last=base<t.slice(0,7) ? base+"-"+pad2(new Date(y, mo, 0).getDate()) : base===t.slice(0,7) ? t : null;
+  var calWeeks=last ? Math.round((dateObj(mondayOf(last))-dateObj(mondayOf(base+"-01")))/(7*864e5))+1 : 0;
+  var avg=calWeeks ? list.length/calWeeks : 0;
   var streak=0, run=0, prev=null;
   Object.keys(weeks).sort().forEach(function(w){
     run=(prev && Math.round((dateObj(w)-dateObj(prev))/864e5)===7) ? run+1 : 1;
