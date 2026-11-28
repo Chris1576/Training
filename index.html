@@ -1988,6 +1988,11 @@ function handshakeOn(){
 /* Athletische Figur, frontal, Ursprung = Körpermitte; Gliedmaßen drehen um Schulter bzw. Hüfte. */
 function hsFigure(o){
   var shade="rgba(0,0,0,.16)", pants="#111113", gold="#C8A16A", rim="stroke='#C8A16A' stroke-opacity='.55' stroke-width='1.1'";
+  var gradId="hsSkin"+String(o.name||o.skin).replace(/[^A-Za-z0-9]/g,"");
+  function tint(hex, t){
+    var n=parseInt(hex.slice(1),16), c=[n>>16,(n>>8)&255,n&255];
+    return "#"+c.map(function(v){ v=Math.round(t>0 ? v+(255-v)*t : v*(1+t)); return (v<16?"0":"")+v.toString(16); }).join("");
+  }
   function arm(cls, thumb){
     return "<g class='"+cls+"'>"+
       "<path d='M-7.5 0 Q-11 12 -7.5 25 L7.5 25 Q11.5 10 7.5 0 Z' fill='"+o.skin+"'/>"+
@@ -1997,15 +2002,15 @@ function hsFigure(o){
       "<g transform='translate(0 47)'>"+
         "<circle class='hs-hand' r='6.5' fill='"+o.skin+"'/>"+
         (thumb ? "<g transform='rotate(-150)'><g class='hs-thumb'>"+
-          "<g transform='scale(1.3)' stroke='rgba(0,0,0,.3)' stroke-width='.9' stroke-linejoin='round'>"+
-            "<path d='M-6.8 1 C-8 -5 -8.2 -10.5 -6.8 -14 C-5.8 -16.6 -2.6 -16.8 -1.8 -14.2 C-1.2 -12 -0.8 -7.5 0 -3 Z' fill='"+o.skin+"'/>"+
-            "<path d='M-6 -13.2 C-5.4 -15 -3.4 -15.2 -2.7 -13.8 L-2.9 -12 C-3.9 -12.7 -5.1 -12.7 -6 -11.9 Z' fill='rgba(255,255,255,.3)' stroke='none'/>"+
-            "<rect x='-7.5' y='-4.5' width='12' height='14' rx='4.5' fill='"+o.skin+"'/>"+
-            "<rect x='0.5' y='-4.5' width='8.5' height='3.8' rx='1.9' fill='"+o.skin+"'/>"+
-            "<rect x='0.5' y='-1' width='8.5' height='3.8' rx='1.9' fill='"+o.skin+"'/>"+
-            "<rect x='0.5' y='2.5' width='8.2' height='3.8' rx='1.9' fill='"+o.skin+"'/>"+
-            "<rect x='0.5' y='6' width='7.4' height='3.6' rx='1.8' fill='"+o.skin+"'/>"+
-            "<path d='M-7 -2.4 Q-4.4 -0.8 -1.2 -2.6' fill='none' stroke='"+shade+"'/>"+
+          "<g transform='scale(1.35)'>"+
+            "<defs><linearGradient id='"+gradId+"' x1='0' y1='0' x2='1' y2='1'>"+
+              "<stop offset='0' stop-color='"+tint(o.skin,.28)+"'/><stop offset='.55' stop-color='"+o.skin+"'/><stop offset='1' stop-color='"+tint(o.skin,-.22)+"'/></linearGradient></defs>"+
+            "<path d='M7 1 C8.4 -5 8.4 -11 6.6 -14.6 C5.4 -17.2 1.8 -17 1.2 -14.2 C0.7 -11.8 0.4 -7.5 -0.4 -3.5 Z' fill='url(#"+gradId+")'/>"+
+            "<path d='M2.4 -14 C3.1 -15.7 5.5 -15.5 6.1 -13.6 L6 -12.1 C5 -12.8 3.7 -12.8 2.6 -12.1 Z' fill='rgba(255,255,255,.4)'/>"+
+            "<path d='M-7.6 -1.2 Q-8.8 -0.4 -8.4 1.6 Q-9.1 2.8 -8.6 4.6 Q-9 6 -8.2 7.4 Q-7.8 10.2 -3.4 10.2 L1.6 10.2 Q6.2 10.2 6.2 5.6 L6.2 -0.6 Q6.2 -4.6 2.2 -4.6 L-3.6 -4.6 Q-7.6 -4.6 -7.6 -1.2 Z' fill='url(#"+gradId+")'/>"+
+            "<path d='M-7.4 -0.2 Q-6.6 0.4 -6.8 1.6M-7.6 3.2 Q-6.8 3.8 -7 5M-7.2 6.4 Q-6.5 7 -6.7 8' stroke='rgba(255,255,255,.32)' stroke-width='.9' fill='none' stroke-linecap='round'/>"+
+            "<path d='M-3.6 -2 Q-2 2.5 -2.6 8M0 -2.4 Q1.2 2 0.8 7.6' stroke='rgba(255,255,255,.14)' stroke-width='1' fill='none' stroke-linecap='round'/>"+
+            "<path d='M0.8 -3.4 Q3.6 -2 6 -3.4' stroke='"+tint(o.skin,-.22)+"' stroke-width='1' fill='none' stroke-linecap='round'/>"+
           "</g>"+
         "</g></g>" : "")+
       "</g></g>";
