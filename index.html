@@ -1997,14 +1997,16 @@ function hsFigure(o){
       "<g transform='translate(0 47)'>"+
         "<circle class='hs-hand' r='6.5' fill='"+o.skin+"'/>"+
         (thumb ? "<g transform='rotate(-150)'><g class='hs-thumb'>"+
-          "<rect x='-7' y='-3' width='13' height='12' rx='4' fill='"+o.skin+"'/>"+
-          "<rect x='3' y='-2.5' width='6' height='3.6' rx='1.8' fill='"+o.skin+"'/>"+
-          "<rect x='3' y='1.1' width='6' height='3.6' rx='1.8' fill='"+o.skin+"'/>"+
-          "<rect x='3' y='4.7' width='5.5' height='3.6' rx='1.8' fill='"+o.skin+"'/>"+
-          "<path d='M4 1.1h4.4M4 4.7h4.2' stroke='"+shade+"' stroke-width='1' stroke-linecap='round'/>"+
-          "<path d='M-7 0 Q-8.6 -8 -6.2 -14.5 Q-4.6 -18.2 -1.6 -16.6 Q0 -15.3 -0.6 -12.2 L-1.2 -2 Z' fill='"+o.skin+"'/>"+
-          "<path d='M-5.6 -13.6 Q-4.4 -15.6 -2.6 -15' stroke='rgba(255,255,255,.35)' stroke-width='1' fill='none' stroke-linecap='round'/>"+
-          "<path d='M-6.6 -1.2 Q-4 0.2 -1.4 -1.4' stroke='"+shade+"' stroke-width='1' fill='none' stroke-linecap='round'/>"+
+          "<g transform='scale(1.3)' stroke='rgba(0,0,0,.3)' stroke-width='.9' stroke-linejoin='round'>"+
+            "<path d='M-6.8 1 C-8 -5 -8.2 -10.5 -6.8 -14 C-5.8 -16.6 -2.6 -16.8 -1.8 -14.2 C-1.2 -12 -0.8 -7.5 0 -3 Z' fill='"+o.skin+"'/>"+
+            "<path d='M-6 -13.2 C-5.4 -15 -3.4 -15.2 -2.7 -13.8 L-2.9 -12 C-3.9 -12.7 -5.1 -12.7 -6 -11.9 Z' fill='rgba(255,255,255,.3)' stroke='none'/>"+
+            "<rect x='-7.5' y='-4.5' width='12' height='14' rx='4.5' fill='"+o.skin+"'/>"+
+            "<rect x='0.5' y='-4.5' width='8.5' height='3.8' rx='1.9' fill='"+o.skin+"'/>"+
+            "<rect x='0.5' y='-1' width='8.5' height='3.8' rx='1.9' fill='"+o.skin+"'/>"+
+            "<rect x='0.5' y='2.5' width='8.2' height='3.8' rx='1.9' fill='"+o.skin+"'/>"+
+            "<rect x='0.5' y='6' width='7.4' height='3.6' rx='1.8' fill='"+o.skin+"'/>"+
+            "<path d='M-7 -2.4 Q-4.4 -0.8 -1.2 -2.6' fill='none' stroke='"+shade+"'/>"+
+          "</g>"+
         "</g></g>" : "")+
       "</g></g>";
   }
