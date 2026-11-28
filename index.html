@@ -1808,7 +1808,6 @@ function settingsHTML(){
     "<input type='checkbox' id='hsToggle'"+(handshakeOn()?" checked":"")+"><i></i></label>"+
     "<p class='p mut'>Der Test spielt die Rekord-Animation mit einem Beispielwert ab. Gespeichert wird dabei nichts.</p>"+
     "<button class='btn sm' id='animTest'>Rekord-Animation testen</button></div>";
-  html+="<div class='sec'><button class='btn sm danger' id='clearBtn'>Alle Trainingsdaten löschen</button></div>";
   return html;
 }
 </script>
@@ -2352,25 +2351,6 @@ function forceServer(){
     });
   }).catch(function(e){ ghStatus("Fehlgeschlagen: "+e.message); toast(e.message); });
 }
-function clearAll(){
-  if(!confirm("Alle erfassten Einheiten löschen? Das gilt für jedes Gerät mit diesem Login und lässt sich nicht rückgängig machen. Der Plan bleibt erhalten.")) return;
-  var now=Date.now();
-  S.data={ startDate:null, sessions:[], updatedAt:now, wipedAt:now, plan:S.data.plan };
-  if(!S.data.plan) delete S.data.plan;
-  S.drafts={};
-  _pendingSaved=[];
-  clearTimeout(_draftTimer);
-  var unit=S.draft ? S.draft.unitId : suggestedUnit();
-  store.del(DRAFTKEY).then(function(){ return persist(); }).then(function(){
-    buildDraft(unit, "A", today());
-    return runSync(function(){ return ghPut(S.data); });
-  }).then(function(){
-    GH.lastSync=new Date().toISOString();
-    store.set(GHKEY, GH);
-    closeSheet(); render(); toast("Alle Trainingsdaten gelöscht");
-  }).catch(function(e){ toast(e && e.message ? e.message : "Löschen fehlgeschlagen"); });
-}
-
 /* ---------- Ereignisse ---------- */
 var _ptrSave={key:"", at:0};
 document.addEventListener("pointerdown", function(ev){
@@ -2385,7 +2365,7 @@ document.addEventListener("pointerdown", function(ev){
 var CLICK_SEL="[data-tab],[data-unit],[data-saveset],[data-addset],[data-rmset],[data-rmextra],[data-collapse],[data-bump],[data-sug],"+
   "[data-open],[data-close],[data-cal],[data-metric],[data-openday],[data-hist],[data-pmove],[data-pdel],[data-pedit],[data-psave],"+
   "[data-pcancel],[data-padd],[data-pick],[data-cat],[data-addback],[data-addok],[data-saveall],[data-finish],"+
-  "#planReset,#ghUp,#ghForce,#backupBtn,#exportBtn,#clearBtn,#animTest";
+  "#planReset,#ghUp,#ghForce,#backupBtn,#exportBtn,#animTest";
 
 document.addEventListener("click", function(ev){
   var el=ev.target.closest ? ev.target.closest(CLICK_SEL) : null;
@@ -2489,7 +2469,6 @@ document.addEventListener("click", function(ev){
   if(el.id==="ghForce"){ forceServer(); return; }
   if(el.id==="backupBtn"){ downloadBackup(); return; }
   if(el.id==="exportBtn"){ downloadCsv(); return; }
-  if(el.id==="clearBtn"){ clearAll(); return; }
   if(el.id==="animTest"){
     closeSheet();
     var demo=unitById(S.draft.unitId).ex[0];
